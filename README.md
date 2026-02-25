@@ -45,10 +45,11 @@
 
 ## Citation
 ```bibtex
-@article{liu2025urbanverse,
-  title={UrbanVerse: Scaling Urban Simulation by Watching City-Tour Videos},
-  author={Liu, Mingxuan and He, Honglin and Ricci, Elisa and Wu, Wayne and Zhou, Bolei},
-  journal={arXiv preprint arXiv:2510.15018},
-  year={2025}
+@inproceedings{
+    liu2026urbanverse,
+    title={UrbanVerse: Scaling Urban Simulation by Watching City-Tour Videos},
+    author={Mingxuan Liu and Honglin He and Elisa Ricci and Wayne Wu and Bolei Zhou},
+    booktitle={The Fourteenth International Conference on Learning Representations},
+    year={2026},
 }
 ```
