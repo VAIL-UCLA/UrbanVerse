@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>UrbanVerse Viewer</title>
+
+  <script type="importmap">
+  {
+    "imports": {
+      "three":          "https://cdn.jsdelivr.net/npm/three@0.176.0/build/three.module.js",
+      "three/addons/":  "https://cdn.jsdelivr.net/npm/three@0.176.0/examples/jsm/"
+    }
+  }
+  </script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      height: 100%;
+      background: #191919;
+      color: #ddd;
+      font-family: system-ui, -apple-system, sans-serif;
+      font-size: 14px;
+      overflow: hidden;
+    }
+
+    #app { display: flex; flex-direction: column; height: 100vh; }
+
+    /* ── nav bar ── */
+    #navbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #252525;
+      border-bottom: 1px solid #333;
+      padding: 8px 16px;
+      height: 48px;
+      flex-shrink: 0;
+    }
+    .nav-side { display: flex; align-items: center; gap: 8px; min-width: 120px; }
+    .nav-side.right { justify-content: flex-end; }
+    .nav-center { flex: 1; text-align: center; }
+    #page-title { font-size: 15px; font-weight: 600; color: #fff; }
+
+    .nav-btn {
+      background: #333;
+      border: 1px solid #444;
+      color: #ddd;
+      padding: 5px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 18px;
+      line-height: 1;
+      transition: background 0.2s;
+    }
+    .nav-btn:hover:not(:disabled) { background: #4a9eff; border-color: #4a9eff; color: #fff; }
+    .nav-btn:disabled { opacity: 0.3; cursor: default; }
+    #counter { font-size: 12px; color: #888; }
+
+    /* ── UID bar ── */
+    #uid-bar {
+      background: #1f1f1f;
+      border-bottom: 1px solid #2c2c2c;
+      padding: 6px 16px;
+      flex-shrink: 0;
+    }
+    #uid-text  { font-family: monospace; font-size: 13px; color: #6af; }
+    #path-text { font-size: 11px; color: #555; margin-top: 2px; }
+
+    /* ── scrollable content area ── */
+    #content {
+      flex: 1;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── GLB section ── */
+    #glb-section {
+      position: relative;
+      flex-shrink: 0;
+      background: #1a1a1a;
+    }
+
+    #glb-canvas {
+      display: block;
+      width: 100%;
+    }
+
+    #glb-loading {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      background: rgba(25,25,25,0.82);
+      font-size: 13px;
+      color: #888;
+      pointer-events: none;
+    }
+    #glb-error {
+      position: absolute;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: rgba(25,25,25,0.88);
+      color: #e88;
+      font-size: 13px;
+    }
+    .spinner {
+      width: 22px; height: 22px;
+      border: 3px solid #333;
+      border-top-color: #4a9eff;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── image strip section ── */
+    #images-section {
+      background: #1e1e1e;
+      border-top: 1px solid #2c2c2c;
+      padding: 12px 16px;
+      flex-shrink: 0;
+    }
+
+    .section-label {
+      font-size: 11px;
+      color: #666;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 8px;
+    }
+
+    #images-strip {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+    }
+    #images-strip::-webkit-scrollbar { height: 4px; }
+    #images-strip::-webkit-scrollbar-thumb { background: #444; border-radius: 2px; }
+
+    .img-tile { flex-shrink: 0; text-align: center; }
+    .img-tile img {
+      height: 130px;
+      width: auto;
+      max-width: 200px;
+      object-fit: cover;
+      border-radius: 4px;
+      border: 2px solid #333;
+      display: block;
+      cursor: zoom-in;
+      transition: border-color 0.2s;
+    }
+    .img-tile img:hover { border-color: #4a9eff; }
+    .img-label { font-size: 10px; color: #666; margin-top: 4px; }
+    .no-images { color: #444; font-style: italic; font-size: 13px; padding: 8px; }
+
+    /* ── annotation section ── */
+    #annotation-section {
+      background: #1c1c1c;
+      border-top: 1px solid #2c2c2c;
+      padding: 12px 16px 24px;
+      flex-shrink: 0;
+    }
+
+    .ann-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+    .ann-table tr:hover td { background: #242424; }
+    .ann-table td {
+      padding: 5px 10px;
+      border: 1px solid #2c2c2c;
+      vertical-align: top;
+    }
+    .ann-key {
+      color: #6af;
+      font-family: monospace;
+      font-size: 12px;
+      white-space: nowrap;
+      width: 220px;
+      min-width: 160px;
+    }
+    .ann-val { color: #ddd; word-break: break-word; }
+    .ann-null { color: #555; font-style: italic; }
+    .ann-bool-true  { color: #5c5; }
+    .ann-bool-false { color: #e88; }
+    .ann-number { color: #fc9; }
+
+    /* nested tables inside annotation values */
+    .ann-val .ann-table { font-size: 11px; margin-top: 4px; }
+    .ann-val .ann-key { min-width: 120px; }
+
+    .no-annotation { color: #555; font-style: italic; padding: 8px; }
+
+    /* ── lightbox ── */
+    #lightbox {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.9);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+      cursor: zoom-out;
+    }
+    #lightbox.open { display: flex; }
+    #lightbox img { max-width: 92vw; max-height: 92vh; object-fit: contain; border-radius: 4px; }
+    #lb-close {
+      position: absolute; top: 16px; right: 22px;
+      font-size: 30px; color: #fff; cursor: pointer; opacity: 0.7; line-height: 1;
+    }
+    #lb-close:hover { opacity: 1; }
+  </style>
+</head>
+<body>
+
+<div id="app">
+  <div id="navbar">
+    <div class="nav-side">
+      <button class="nav-btn" id="btn-prev">&#8592;</button>
+      <span id="counter">1 / 1</span>
+    </div>
+    <div class="nav-center"><span id="page-title">UrbanVerse Viewer</span></div>
+    <div class="nav-side right">
+      <button class="nav-btn" id="btn-next">&#8594;</button>
+    </div>
+  </div>
+
+  <div id="uid-bar">
+    <div id="uid-text"></div>
+    <div id="path-text"></div>
+  </div>
+
+  <div id="content">
+    <!-- GLB viewer -->
+    <div id="glb-section" style="display:none">
+      <canvas id="glb-canvas"></canvas>
+      <div id="glb-loading"><div class="spinner"></div><span>Loading model…</span></div>
+      <div id="glb-error">Failed to load 3D model.</div>
+    </div>
+
+    <!-- Image strip -->
+    <div id="images-section" style="display:none">
+      <div class="section-label">Thumbnail &amp; Renders</div>
+      <div id="images-strip"></div>
+    </div>
+
+    <!-- Annotation table -->
+    <div id="annotation-section" style="display:none">
+      <div class="section-label">Annotation</div>
+      <div id="annotation-container"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Lightbox -->
+<div id="lightbox">
+  <span id="lb-close">&times;</span>
+  <img id="lb-img" src="" alt="">
+</div>
+
+<!-- Injected by Python -->
+<script>const VIEWER_CONFIG = /* __VIEWER_CONFIG__ */;</script>
+
+<script type="module">
+  import * as THREE          from 'three';
+  import { GLTFLoader }      from 'three/addons/loaders/GLTFLoader.js';
+  import { DRACOLoader }     from 'three/addons/loaders/DRACOLoader.js';
+  import { MeshoptDecoder }  from 'three/addons/libs/meshopt_decoder.module.js';
+  import { OrbitControls }   from 'three/addons/controls/OrbitControls.js';
+  import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+  import GUI                 from 'https://cdn.jsdelivr.net/npm/lil-gui@0.19/+esm';
+
+  // ── Config ────────────────────────────────────────────────────────────────
+  const CFG    = VIEWER_CONFIG;
+  const assets = CFG.assets || [];
+  let   idx    = 0;
+
+  // ── Mode flags ────────────────────────────────────────────────────────────
+  const mode       = CFG.mode || 'full';
+  const showGLB    = ['full','glb','original'].includes(mode);
+  const showImages = ['full','images','thumbnails','renders'].includes(mode);
+  const showAnn    = ['full','annotation'].includes(mode);
+  const showThumb  = ['full','images','thumbnails'].includes(mode);
+  const showRender = ['full','images','renders'].includes(mode);
+
+  // ── DOM refs ──────────────────────────────────────────────────────────────
+  const pageTitleEl  = document.getElementById('page-title');
+  const counterEl    = document.getElementById('counter');
+  const btnPrev      = document.getElementById('btn-prev');
+  const btnNext      = document.getElementById('btn-next');
+  const uidEl        = document.getElementById('uid-text');
+  const pathEl       = document.getElementById('path-text');
+  const glbSection   = document.getElementById('glb-section');
+  const glbCanvas    = document.getElementById('glb-canvas');
+  const glbLoading   = document.getElementById('glb-loading');
+  const glbError     = document.getElementById('glb-error');
+  const imgsSection  = document.getElementById('images-section');
+  const imgsStrip    = document.getElementById('images-strip');
+  const annSection   = document.getElementById('annotation-section');
+  const annContainer = document.getElementById('annotation-container');
+  const lightbox     = document.getElementById('lightbox');
+  const lbImg        = document.getElementById('lb-img');
+
+  pageTitleEl.textContent = CFG.title || 'UrbanVerse Viewer';
+  document.title = CFG.title || 'UrbanVerse Viewer';
+
+  // Show sections based on mode
+  if (showGLB)    glbSection.style.display  = 'block';
+  if (showImages) imgsSection.style.display = 'block';
+  if (showAnn)    annSection.style.display  = 'block';
+
+  // ── Three.js (only when showing GLB) ─────────────────────────────────────
+  let renderer, camera, controls, scene, pmremGen, gui, mixer, clock;
+  let currentModel = null;
+
+  if (showGLB) {
+    // Canvas height: larger if no image/annotation sections, smaller if all sections
+    const hasBelow  = showImages || showAnn;
+    const canvasH   = hasBelow ? Math.max(Math.round(window.innerHeight * 0.5), 280)
+                                : Math.max(Math.round(window.innerHeight * 0.85), 400);
+    glbCanvas.style.height = canvasH + 'px';
+
+    renderer = new THREE.WebGLRenderer({ canvas: glbCanvas, antialias: true });
+    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.toneMapping        = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = VIEWER_CONFIG.defaultExposure ?? 1.0;
+    renderer.outputColorSpace   = THREE.SRGBColorSpace;
+
+    scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x1a1a1a);
+
+    camera = new THREE.PerspectiveCamera(45, 1, 0.001, 1000);
+    camera.position.set(2, 1.5, 3);
+
+    controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.08;
+
+    pmremGen = new THREE.PMREMGenerator(renderer);
+    const roomEnv = pmremGen.fromScene(new RoomEnvironment()).texture;
+    scene.environment = roomEnv;
+
+    // Subtle ground grid
+    const grid = new THREE.GridHelper(10, 10, 0x333333, 0x282828);
+    scene.add(grid);
+
+    clock = new THREE.Clock();
+
+    function onResize() {
+      const w = glbCanvas.clientWidth;
+      const h = glbCanvas.clientHeight;
+      renderer.setSize(w, h, false);
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+    }
+    new ResizeObserver(onResize).observe(glbCanvas);
+    onResize();
+
+    function animate() {
+      requestAnimationFrame(animate);
+      controls.update();
+      if (mixer) mixer.update(clock.getDelta());
+      renderer.render(scene, camera);
+    }
+    animate();
+  }
+
+  // ── GLTF Loader ───────────────────────────────────────────────────────────
+  let gltfLoader;
+  if (showGLB) {
+    const dracoLoader = new DRACOLoader();
+    dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/');
+    gltfLoader = new GLTFLoader();
+    gltfLoader.setDRACOLoader(dracoLoader);
+    gltfLoader.setMeshoptDecoder(MeshoptDecoder);
+  }
+
+  // ── GPU cleanup ───────────────────────────────────────────────────────────
+  function disposeModel() {
+    if (!currentModel) return;
+    scene.remove(currentModel);
+    currentModel.traverse(obj => {
+      if (!obj.isMesh) return;
+      obj.geometry.dispose();
+      const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
+      mats.forEach(m => {
+        Object.values(m).forEach(v => { if (v?.isTexture) v.dispose(); });
+        m.dispose();
+      });
+    });
+    currentModel = null;
+    mixer = null;
+    if (gui) { gui.destroy(); gui = null; }
+  }
+
+  // ── Camera auto-fit ───────────────────────────────────────────────────────
+  function fitCamera(model) {
+    const box    = new THREE.Box3().setFromObject(model);
+    const size   = box.getSize(new THREE.Vector3());
+    const center = box.getCenter(new THREE.Vector3());
+    const maxDim = Math.max(size.x, size.y, size.z);
+
+    if (maxDim < 1e-6) return;
+
+    const fov  = camera.fov * (Math.PI / 180);
+    const dist = (maxDim / (2 * Math.tan(fov / 2))) * 1.6;
+
+    camera.position.copy(center).add(new THREE.Vector3(dist * 0.7, dist * 0.5, dist));
+    camera.near = dist / 100;
+    camera.far  = dist * 100;
+    camera.updateProjectionMatrix();
+    controls.target.copy(center);
+    controls.update();
+  }
+
+  // ── GLB load ──────────────────────────────────────────────────────────────
+  function loadGLB(url) {
+    disposeModel();
+
+    if (!url) {
+      glbLoading.style.display = 'none';
+      glbError.style.display   = 'flex';
+      glbError.textContent     = 'No 3D model available for this asset.';
+      return;
+    }
+
+    glbLoading.style.display = 'flex';
+    glbError.style.display   = 'none';
+
+    gltfLoader.load(
+      url,
+      gltf => {
+        currentModel = gltf.scene;
+        scene.add(currentModel);
+
+        if (gltf.animations.length > 0) {
+          mixer = new THREE.AnimationMixer(currentModel);
+          gltf.animations.forEach(clip => mixer.clipAction(clip));
+          mixer.clipAction(gltf.animations[0]).play();
+        }
+
+        fitCamera(currentModel);
+        glbLoading.style.display = 'none';
+        setupGUI(gltf);
+      },
+      undefined,
+      err => {
+        console.error('[viewer] GLB error:', err);
+        glbLoading.style.display = 'none';
+        glbError.style.display   = 'flex';
+        glbError.textContent     = 'Failed to load 3D model.';
+      }
+    );
+  }
+
+  // ── lil-gui panel ─────────────────────────────────────────────────────────
+  function setupGUI(gltf) {
+    if (gui) gui.destroy();
+    gui = new GUI({ title: 'Display', width: 220 });
+    gui.domElement.style.position = 'absolute';
+    gui.domElement.style.top      = '0px';
+    gui.domElement.style.right    = '0px';
+    glbSection.appendChild(gui.domElement);
+
+    const state = {
+      wireframe:  false,
+      autoRotate: false,
+      exposure:   renderer.toneMappingExposure,
+      showGrid:   true,
+    };
+
+    gui.add(state, 'wireframe').name('Wireframe').onChange(v => {
+      currentModel?.traverse(o => { if (o.isMesh) o.material.wireframe = v; });
+    });
+    gui.add(state, 'autoRotate').name('Auto-rotate').onChange(v => {
+      controls.autoRotate = v; controls.autoRotateSpeed = 1.5;
+    });
+    gui.add(state, 'showGrid').name('Grid').onChange(v => {
+      scene.children.find(c => c.isGridHelper && (c.visible = v));
+    });
+    gui.add(state, 'exposure', 0, 10, 0.05).name('Exposure').onChange(v => {
+      renderer.toneMappingExposure = v;
+    });
+
+    if (gltf.animations.length > 0 && mixer) {
+      const anim = gui.addFolder('Animation');
+      const as = { paused: false, clip: 0 };
+      anim.add(as, 'paused').name('Pause').onChange(v => { mixer.timeScale = v ? 0 : 1; });
+      if (gltf.animations.length > 1) {
+        const names = gltf.animations.map((c, i) => `${i}: ${c.name || `Clip ${i}`}`);
+        anim.add(as, 'clip', Object.fromEntries(names.map((n, i) => [n, i]))).name('Clip')
+          .onChange(clipIdx => {
+            mixer.stopAllAction();
+            mixer.clipAction(gltf.animations[clipIdx]).play();
+          });
+      }
+    }
+
+    const camFolder = gui.addFolder('Camera');
+    camFolder.add({ reset: () => currentModel && fitCamera(currentModel) }, 'reset').name('Reset');
+    camFolder.close();
+  }
+
+  // ── Annotation rendering ──────────────────────────────────────────────────
+  function makeAnnotationValue(val) {
+    if (val === null || val === undefined) {
+      const s = document.createElement('span');
+      s.className = 'ann-null'; s.textContent = 'null';
+      return s;
+    }
+    if (typeof val === 'boolean') {
+      const s = document.createElement('span');
+      s.className = val ? 'ann-bool-true' : 'ann-bool-false';
+      s.textContent = String(val);
+      return s;
+    }
+    if (typeof val === 'number') {
+      const s = document.createElement('span');
+      s.className = 'ann-number'; s.textContent = String(val);
+      return s;
+    }
+    if (typeof val === 'string') {
+      return document.createTextNode(val);
+    }
+    if (Array.isArray(val)) {
+      if (val.length === 0) return document.createTextNode('[ ]');
+      // Array of primitives → compact inline display
+      if (typeof val[0] !== 'object') {
+        return document.createTextNode(JSON.stringify(val));
+      }
+    }
+    // Nested object or array-of-objects → recurse
+    const entries = Array.isArray(val) ? val.map((v, i) => [i, v]) : Object.entries(val);
+    const t = document.createElement('table');
+    t.className = 'ann-table';
+    for (const [k, v] of entries) {
+      const tr = t.insertRow();
+      const tk = tr.insertCell(); tk.className = 'ann-key'; tk.textContent = k;
+      const tv = tr.insertCell(); tv.className = 'ann-val';
+      tv.appendChild(makeAnnotationValue(v));
+    }
+    return t;
+  }
+
+  function renderAnnotation(ann) {
+    annContainer.innerHTML = '';
+    if (!ann) {
+      const d = document.createElement('div');
+      d.className = 'no-annotation'; d.textContent = 'No annotation available.';
+      annContainer.appendChild(d);
+      return;
+    }
+    const table = document.createElement('table');
+    table.className = 'ann-table';
+    for (const [k, v] of Object.entries(ann)) {
+      const tr = table.insertRow();
+      const tk = tr.insertCell(); tk.className = 'ann-key'; tk.textContent = k;
+      const tv = tr.insertCell(); tv.className = 'ann-val';
+      tv.appendChild(makeAnnotationValue(v));
+    }
+    annContainer.appendChild(table);
+  }
+
+  // ── Image strip rendering ─────────────────────────────────────────────────
+  function renderImages(asset) {
+    imgsStrip.innerHTML = '';
+
+    const addImg = (url, label) => {
+      if (!url) return;
+      const tile = document.createElement('div'); tile.className = 'img-tile';
+      const img  = document.createElement('img');
+      img.src   = url;
+      img.alt   = label;
+      img.title = label;
+      img.onerror = () => { tile.style.display = 'none'; };
+      img.onclick = () => { lbImg.src = url; lightbox.classList.add('open'); };
+      const lbl = document.createElement('div'); lbl.className = 'img-label';
+      lbl.textContent = label;
+      tile.appendChild(img); tile.appendChild(lbl);
+      imgsStrip.appendChild(tile);
+    };
+
+    if (showThumb)  addImg(asset.thumbnail_url, 'Thumbnail');
+    if (showRender && asset.render_urls) {
+      for (const [angle, url] of Object.entries(asset.render_urls)) {
+        addImg(url, `${angle}°`);
+      }
+    }
+
+    if (imgsStrip.children.length === 0) {
+      const d = document.createElement('div'); d.className = 'no-images';
+      d.textContent = 'No images available for this asset.';
+      imgsStrip.appendChild(d);
+    }
+  }
+
+  // ── Navigation ────────────────────────────────────────────────────────────
+  function goTo(newIdx) {
+    if (assets.length === 0) return;
+    idx = Math.max(0, Math.min(newIdx, assets.length - 1));
+    const asset = assets[idx];
+
+    counterEl.textContent = `${idx + 1} / ${assets.length}`;
+    btnPrev.disabled = idx === 0;
+    btnNext.disabled = idx === assets.length - 1;
+
+    uidEl.textContent  = `UID: ${asset.uid}`;
+    pathEl.textContent = `Saved: ${asset.saved_path}`;
+
+    if (showGLB)    loadGLB(asset.glb_url);
+    if (showImages) renderImages(asset);
+    if (showAnn)    renderAnnotation(asset.annotation);
+  }
+
+  btnPrev.addEventListener('click', () => goTo(idx - 1));
+  btnNext.addEventListener('click', () => goTo(idx + 1));
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowLeft'  || e.key === 'a') goTo(idx - 1);
+    if (e.key === 'ArrowRight' || e.key === 'd') goTo(idx + 1);
+    if (e.key === 'Escape') lightbox.classList.remove('open');
+  });
+
+  // ── Lightbox ──────────────────────────────────────────────────────────────
+  lightbox.addEventListener('click', () => lightbox.classList.remove('open'));
+  document.getElementById('lb-close').addEventListener('click', e => {
+    e.stopPropagation();
+    lightbox.classList.remove('open');
+  });
+
+  // ── Init ──────────────────────────────────────────────────────────────────
+  if (assets.length === 0) {
+    uidEl.textContent = 'No assets to display.';
+  } else {
+    goTo(0);
+  }
+</script>
+</body>
+</html>

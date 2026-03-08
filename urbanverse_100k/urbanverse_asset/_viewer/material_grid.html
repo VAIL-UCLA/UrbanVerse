@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>UrbanVerse Materials</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      min-height: 100%;
+      background: #191919;
+      color: #ddd;
+      font-family: system-ui, -apple-system, sans-serif;
+      font-size: 14px;
+    }
+
+    /* ── header ── */
+    #header {
+      background: #252525;
+      border-bottom: 1px solid #333;
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    #header h1 { font-size: 16px; font-weight: 600; color: #fff; }
+
+    #count {
+      margin-left: auto;
+      font-size: 12px;
+      color: #888;
+      background: #333;
+      padding: 3px 10px;
+      border-radius: 12px;
+    }
+
+    /* ── search ── */
+    #search-bar {
+      background: #1e1e1e;
+      border-bottom: 1px solid #2c2c2c;
+      padding: 10px 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    #search-input {
+      background: #2a2a2a;
+      border: 1px solid #3a3a3a;
+      border-radius: 4px;
+      color: #ddd;
+      padding: 6px 12px;
+      font-size: 13px;
+      width: 280px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    #search-input:focus { border-color: #4a9eff; }
+    #search-input::placeholder { color: #555; }
+
+    #search-label { font-size: 12px; color: #666; }
+
+    /* ── grid ── */
+    #grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 12px;
+      padding: 20px;
+    }
+
+    /* ── tile ── */
+    .tile {
+      background: #252525;
+      border: 1px solid #333;
+      border-radius: 6px;
+      overflow: hidden;
+      cursor: default;
+      transition: border-color 0.2s, transform 0.15s;
+    }
+    .tile:hover {
+      border-color: #4a9eff;
+      transform: translateY(-2px);
+    }
+
+    .tile-img-wrap {
+      width: 100%;
+      aspect-ratio: 1;
+      background: #1a1a1a;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    .tile-img-wrap img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      cursor: zoom-in;
+    }
+
+    .tile-img-wrap .no-img {
+      color: #444;
+      font-size: 12px;
+      text-align: center;
+      padding: 8px;
+    }
+
+    .tile-label {
+      padding: 8px 10px;
+      font-size: 11px;
+      color: #aaa;
+      word-break: break-all;
+      line-height: 1.4;
+      border-top: 1px solid #2c2c2c;
+    }
+
+    /* ── lightbox ── */
+    #lightbox {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.85);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+      cursor: zoom-out;
+    }
+    #lightbox.open { display: flex; }
+    #lightbox img {
+      max-width: 90vw;
+      max-height: 90vh;
+      object-fit: contain;
+      border-radius: 4px;
+    }
+    #lb-close {
+      position: absolute;
+      top: 16px; right: 20px;
+      font-size: 28px;
+      color: #fff;
+      cursor: pointer;
+      line-height: 1;
+      opacity: 0.7;
+    }
+    #lb-close:hover { opacity: 1; }
+
+    /* ── empty state ── */
+    #empty-msg {
+      display: none;
+      text-align: center;
+      color: #555;
+      padding: 60px 20px;
+      font-size: 15px;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="header">
+    <h1 id="page-title">UrbanVerse Materials</h1>
+    <span id="count"></span>
+  </div>
+
+  <div id="search-bar">
+    <span id="search-label">Filter:</span>
+    <input id="search-input" type="text" placeholder="Search by name…">
+  </div>
+
+  <div id="grid"></div>
+  <div id="empty-msg">No materials match your search.</div>
+
+  <!-- Lightbox -->
+  <div id="lightbox">
+    <span id="lb-close">&times;</span>
+    <img id="lb-img" src="" alt="">
+  </div>
+
+  <!-- Injected by Python -->
+  <script>const VIEWER_CONFIG = /* __VIEWER_CONFIG__ */;</script>
+
+  <script>
+    const cfg       = VIEWER_CONFIG;
+    const materials = cfg.materials || [];
+    const title     = cfg.title || 'UrbanVerse Materials';
+
+    document.getElementById('page-title').textContent = title;
+    document.title = title;
+
+    const grid       = document.getElementById('grid');
+    const countEl    = document.getElementById('count');
+    const searchEl   = document.getElementById('search-input');
+    const emptyMsg   = document.getElementById('empty-msg');
+    const lightbox   = document.getElementById('lightbox');
+    const lbImg      = document.getElementById('lb-img');
+    const lbClose    = document.getElementById('lb-close');
+
+    // ── Build tiles ──────────────────────────────────────────────────────────
+    const tiles = materials.map(mat => {
+      const tile = document.createElement('div');
+      tile.className = 'tile';
+      tile.dataset.name = mat.description.toLowerCase();
+
+      const imgWrap = document.createElement('div');
+      imgWrap.className = 'tile-img-wrap';
+
+      if (mat.thumbnail_url) {
+        const img = document.createElement('img');
+        img.src = mat.thumbnail_url;
+        img.alt = mat.description;
+        img.title = mat.saved_path || mat.description;
+        img.onerror = () => {
+          imgWrap.innerHTML = '<span class="no-img">Image not found</span>';
+        };
+        img.onclick = (e) => {
+          e.stopPropagation();
+          lbImg.src = mat.thumbnail_url;
+          lightbox.classList.add('open');
+        };
+        imgWrap.appendChild(img);
+      } else {
+        imgWrap.innerHTML = '<span class="no-img">Not downloaded</span>';
+      }
+
+      const label = document.createElement('div');
+      label.className = 'tile-label';
+      label.textContent = mat.description;
+      label.title = mat.saved_path || mat.description;
+
+      tile.appendChild(imgWrap);
+      tile.appendChild(label);
+      grid.appendChild(tile);
+
+      return tile;
+    });
+
+    function updateCount(visible) {
+      countEl.textContent = `${visible} / ${materials.length}`;
+    }
+    updateCount(tiles.length);
+
+    // ── Search filter ────────────────────────────────────────────────────────
+    searchEl.addEventListener('input', () => {
+      const q = searchEl.value.toLowerCase().trim();
+      let visible = 0;
+      tiles.forEach(tile => {
+        const match = !q || tile.dataset.name.includes(q);
+        tile.style.display = match ? '' : 'none';
+        if (match) visible++;
+      });
+      updateCount(visible);
+      emptyMsg.style.display = (visible === 0) ? 'block' : 'none';
+    });
+
+    // ── Lightbox ─────────────────────────────────────────────────────────────
+    lightbox.addEventListener('click', () => lightbox.classList.remove('open'));
+    lbClose.addEventListener('click', (e) => {
+      e.stopPropagation();
+      lightbox.classList.remove('open');
+    });
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape') lightbox.classList.remove('open');
+    });
+  </script>
+</body>
+</html>

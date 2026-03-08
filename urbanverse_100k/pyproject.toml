@@ -1,0 +1,64 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "urbanverse-asset"
+version = "0.1.0"
+description = "Python API for the UrbanVerse-100K 3D urban asset dataset on HuggingFace"
+readme = "README.md"
+license = {file = "urbanverse_asset/LICENSE"}
+requires-python = ">=3.8"
+authors = [
+    {name = "Mingxuan Liu"},
+]
+keywords = [
+    "3d-assets",
+    "autonomous-driving",
+    "urban-simulation",
+    "huggingface",
+    "dataset",
+    "glb",
+    "pbr-materials",
+    "isaacsim",
+    "physical-ai",
+    "sidewalk-autonomy",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dependencies = [
+    "huggingface_hub>=0.34.4",
+    "tqdm>=4.67.1",
+    "Pillow>=11.0.0",
+    "trimesh>=4.0.0",
+    "usd-core>=23.11",
+    "sentence-transformers>=2.2.0",
+]
+
+[project.urls]
+Homepage = "https://urbanverseproject.github.io/"
+Repository = "https://github.com/OatmealLiu/UrbanVerse-100K"
+Dataset = "https://huggingface.co/datasets/Oatmealliu/UrbanVerse-100K"
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "urbanverse_asset/",
+    "README.md",
+    "LICENSE",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["urbanverse_asset"]

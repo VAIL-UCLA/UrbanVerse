@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>UrbanVerse Material Viewer</title>
+
+  <script type="importmap">
+  {
+    "imports": {
+      "three":          "https://cdn.jsdelivr.net/npm/three@0.176.0/build/three.module.js",
+      "three/addons/":  "https://cdn.jsdelivr.net/npm/three@0.176.0/examples/jsm/"
+    }
+  }
+  </script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      height: 100%;
+      background: #191919;
+      color: #ddd;
+      font-family: system-ui, -apple-system, sans-serif;
+      font-size: 14px;
+      overflow: hidden;
+    }
+
+    #app { display: flex; flex-direction: column; height: 100vh; }
+
+    /* ── nav bar ── */
+    #navbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #252525;
+      border-bottom: 1px solid #333;
+      padding: 8px 16px;
+      height: 48px;
+      flex-shrink: 0;
+    }
+    .nav-side { display: flex; align-items: center; gap: 8px; min-width: 100px; }
+    .nav-side.right { justify-content: flex-end; }
+    .nav-center { flex: 1; text-align: center; }
+    #page-title { font-size: 15px; font-weight: 600; color: #fff; }
+
+    .nav-btn {
+      background: #333;
+      border: 1px solid #444;
+      color: #ddd;
+      padding: 5px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 18px;
+      line-height: 1;
+      transition: background 0.2s;
+    }
+    .nav-btn:hover:not(:disabled) { background: #4a9eff; border-color: #4a9eff; color: #fff; }
+    .nav-btn:disabled { opacity: 0.3; cursor: default; }
+
+    #counter { font-size: 12px; color: #888; }
+
+    /* ── info bar ── */
+    #info-bar {
+      background: #1f1f1f;
+      border-bottom: 1px solid #2c2c2c;
+      padding: 6px 16px;
+      flex-shrink: 0;
+    }
+    #mat-name { font-size: 14px; color: #6af; font-weight: 500; }
+    #mat-path { font-size: 11px; color: #555; margin-top: 2px; }
+
+    /* ── canvas area ── */
+    #canvas-wrap {
+      position: relative;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    #canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    /* ── loading overlay ── */
+    #loading {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: rgba(25,25,25,0.80);
+      gap: 14px;
+      font-size: 14px;
+      color: #888;
+      pointer-events: none;
+    }
+    .spinner {
+      width: 32px; height: 32px;
+      border: 3px solid #333;
+      border-top-color: #4a9eff;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── channel info panel ── */
+    #channel-panel {
+      position: absolute;
+      bottom: 12px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 16px;
+      background: rgba(0,0,0,0.55);
+      border: 1px solid #333;
+      border-radius: 6px;
+      padding: 6px 20px;
+      pointer-events: none;
+      flex-wrap: wrap;
+      justify-content: center;
+      max-width: 90%;
+    }
+    .ch-tag {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 3px;
+      background: #1a3a5e;
+      color: #6af;
+    }
+    .ch-tag.empty {
+      background: #2a2a2a;
+      color: #555;
+    }
+
+    /* ── thumbnail strip ── */
+    #thumb-bar {
+      display: none;
+      background: #1a1a1a;
+      border-top: 1px solid #2c2c2c;
+      padding: 6px 12px;
+      flex-shrink: 0;
+      align-items: center;
+      gap: 6px;
+      overflow-x: auto;
+    }
+    #thumb-bar img {
+      height: 48px;
+      width: 72px;
+      object-fit: cover;
+      border-radius: 3px;
+      border: 2px solid transparent;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    #thumb-bar img.active { border-color: #4a9eff; }
+    #thumb-bar img:hover   { border-color: #6bbfff; }
+  </style>
+</head>
+<body>
+
+<div id="app">
+  <div id="navbar">
+    <div class="nav-side">
+      <button class="nav-btn" id="btn-prev">&#8592;</button>
+      <span id="counter">1 / 1</span>
+    </div>
+    <div class="nav-center"><span id="page-title">UrbanVerse Material Viewer</span></div>
+    <div class="nav-side right">
+      <button class="nav-btn" id="btn-next">&#8594;</button>
+    </div>
+  </div>
+
+  <div id="info-bar">
+    <div id="mat-name"></div>
+    <div id="mat-path"></div>
+  </div>
+
+  <div id="canvas-wrap">
+    <canvas id="canvas"></canvas>
+
+    <div id="loading">
+      <div class="spinner"></div>
+      <span id="loading-text">Loading material…</span>
+    </div>
+
+    <div id="channel-panel"></div>
+  </div>
+
+  <div id="thumb-bar"></div>
+</div>
+
+<!-- Injected by Python -->
+<script>const VIEWER_CONFIG = /* __VIEWER_CONFIG__ */;</script>
+
+<script type="module">
+  import * as THREE        from 'three';
+  import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+  import GUI               from 'https://cdn.jsdelivr.net/npm/lil-gui@0.19/+esm';
+
+  // ── Config ────────────────────────────────────────────────────────────────
+  const CFG       = VIEWER_CONFIG;
+  const materials = CFG.materials || [];
+  let   idx       = 0;
+
+  const ALL_CHANNELS = ['diffuse', 'normal', 'roughness', 'ao', 'metallic', 'height'];
+
+  // ── DOM ───────────────────────────────────────────────────────────────────
+  const pageTitle    = document.getElementById('page-title');
+  const counter      = document.getElementById('counter');
+  const btnPrev      = document.getElementById('btn-prev');
+  const btnNext      = document.getElementById('btn-next');
+  const matName      = document.getElementById('mat-name');
+  const matPath      = document.getElementById('mat-path');
+  const canvasEl     = document.getElementById('canvas');
+  const loadingEl    = document.getElementById('loading');
+  const loadingText  = document.getElementById('loading-text');
+  const thumbBar     = document.getElementById('thumb-bar');
+  const channelPanel = document.getElementById('channel-panel');
+
+  pageTitle.textContent = CFG.title || 'UrbanVerse Material Viewer';
+
+  // ── Three.js setup ────────────────────────────────────────────────────────
+  const renderer = new THREE.WebGLRenderer({ canvas: canvasEl, antialias: true });
+  renderer.setPixelRatio(window.devicePixelRatio);
+  renderer.toneMapping         = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 2.0;
+  renderer.outputColorSpace    = THREE.SRGBColorSpace;
+
+  const scene  = new THREE.Scene();
+  scene.background = new THREE.Color(0x1a1a1a);
+
+  const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
+  camera.position.set(0, 1.5, 2.0);
+
+  const controls = new OrbitControls(camera, renderer.domElement);
+  controls.target.set(0, 0, 0);
+  controls.enableDamping = true;
+  controls.dampingFactor = 0.08;
+  controls.update();
+
+  // ── Lighting ──────────────────────────────────────────────────────────────
+  const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+  scene.add(ambientLight);
+
+  const dirLight1 = new THREE.DirectionalLight(0xffffff, 1.5);
+  dirLight1.position.set(3, 5, 4);
+  scene.add(dirLight1);
+
+  const dirLight2 = new THREE.DirectionalLight(0xffffff, 0.5);
+  dirLight2.position.set(-3, 3, -2);
+  scene.add(dirLight2);
+
+  // ── PBR plane ─────────────────────────────────────────────────────────────
+  const planeGeo = new THREE.PlaneGeometry(2, 2, 128, 128);
+  planeGeo.rotateX(-Math.PI / 2);
+  const defaultMat = new THREE.MeshStandardMaterial({
+    color: 0x444444, roughness: 0.8, side: THREE.DoubleSide,
+  });
+  const planeMesh = new THREE.Mesh(planeGeo, defaultMat);
+  scene.add(planeMesh);
+
+  const gridHelper = new THREE.GridHelper(6, 12, 0x333333, 0x222222);
+  gridHelper.position.y = -0.01;
+  scene.add(gridHelper);
+
+  // ── GUI state ─────────────────────────────────────────────────────────────
+  const guiState = {
+    displacement: 0.05,
+    exposure: 2.0,
+    autoRotate: false,
+  };
+
+  const gui = new GUI({ title: 'Controls', width: 230 });
+  gui.domElement.style.position = 'absolute';
+  gui.domElement.style.top      = '0px';
+  gui.domElement.style.right    = '0px';
+
+  gui.add(guiState, 'displacement', 0, 0.3, 0.005).name('Displacement').onChange(v => {
+    if (planeMesh.material.displacementMap) {
+      planeMesh.material.displacementScale = v;
+    }
+  });
+  gui.add(guiState, 'exposure', 0.1, 4, 0.05).name('Exposure').onChange(v => {
+    renderer.toneMappingExposure = v;
+  });
+  gui.add(guiState, 'autoRotate').name('Auto-rotate').onChange(v => {
+    controls.autoRotate = v;
+    controls.autoRotateSpeed = 1.5;
+  });
+  gui.add({ reset: () => {
+    camera.position.set(0, 1.5, 2.0);
+    controls.target.set(0, 0, 0);
+    controls.update();
+  }}, 'reset').name('Reset Camera');
+
+  document.getElementById('canvas-wrap').appendChild(gui.domElement);
+
+  // ── Texture loading ───────────────────────────────────────────────────────
+  const textureLoader = new THREE.TextureLoader();
+  const textureCache  = {};
+
+  function loadTexture(url, srgb = false) {
+    if (textureCache[url]) return Promise.resolve(textureCache[url]);
+    return new Promise((resolve, reject) => {
+      textureLoader.load(url, tex => {
+        tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+        if (srgb) tex.colorSpace = THREE.SRGBColorSpace;
+        textureCache[url] = tex;
+        resolve(tex);
+      }, undefined, reject);
+    });
+  }
+
+  let currentMaterial = null;
+
+  async function applyMaterial(mat) {
+    loadingEl.style.display = 'flex';
+    loadingText.textContent = 'Loading textures…';
+
+    const params = { roughness: 0.7, metalness: 0.0, side: THREE.DoubleSide };
+    const promises = [];
+    const tex = mat.textures || {};
+
+    if (tex.diffuse) {
+      promises.push(loadTexture(tex.diffuse, true).then(t => { params.map = t; }));
+    }
+    if (tex.normal) {
+      promises.push(loadTexture(tex.normal).then(t => { params.normalMap = t; }));
+    }
+    if (tex.roughness) {
+      promises.push(loadTexture(tex.roughness).then(t => {
+        params.roughnessMap = t;
+        params.roughness = 1.0;
+      }));
+    }
+    if (tex.ao) {
+      promises.push(loadTexture(tex.ao).then(t => { params.aoMap = t; }));
+    }
+    if (tex.metallic) {
+      promises.push(loadTexture(tex.metallic).then(t => {
+        params.metalnessMap = t;
+        params.metalness = 1.0;
+      }));
+    }
+    if (tex.height) {
+      promises.push(loadTexture(tex.height).then(t => {
+        params.displacementMap = t;
+        params.displacementScale = guiState.displacement;
+      }));
+    }
+
+    try {
+      await Promise.all(promises);
+    } catch (e) {
+      console.warn('Some textures failed to load:', e);
+    }
+
+    if (currentMaterial) currentMaterial.dispose();
+    currentMaterial = new THREE.MeshStandardMaterial(params);
+    planeMesh.material = currentMaterial;
+
+    // Update channel tags
+    channelPanel.innerHTML = '';
+    for (const ch of ALL_CHANNELS) {
+      const tag = document.createElement('span');
+      tag.className = tex[ch] ? 'ch-tag' : 'ch-tag empty';
+      tag.textContent = ch;
+      channelPanel.appendChild(tag);
+    }
+
+    loadingEl.style.display = 'none';
+  }
+
+  // ── Thumbnail strip ────────────────────────────────────────────────────────
+  const thumbEls = [];
+  const hasThumbs = materials.some(m => m.thumbnail_url);
+  if (hasThumbs) {
+    thumbBar.style.display = 'flex';
+    materials.forEach((mat, i) => {
+      if (!mat.thumbnail_url) return;
+      const img = document.createElement('img');
+      img.src   = mat.thumbnail_url;
+      img.alt   = mat.name;
+      img.title = mat.name;
+      img.onerror = () => { img.style.display = 'none'; };
+      img.onclick = () => goTo(i);
+      thumbBar.appendChild(img);
+      thumbEls.push({ el: img, matIdx: i });
+    });
+  }
+
+  function updateThumbs() {
+    thumbEls.forEach(({ el, matIdx }) => {
+      el.classList.toggle('active', matIdx === idx);
+    });
+    const active = thumbEls.find(t => t.matIdx === idx);
+    if (active) active.el.scrollIntoView({ behavior: 'smooth', inline: 'nearest', block: 'nearest' });
+  }
+
+  // ── Navigation ────────────────────────────────────────────────────────────
+  function goTo(newIdx) {
+    if (materials.length === 0) return;
+    idx = Math.max(0, Math.min(newIdx, materials.length - 1));
+    const mat = materials[idx];
+
+    counter.textContent  = `${idx + 1} / ${materials.length}`;
+    btnPrev.disabled     = idx === 0;
+    btnNext.disabled     = idx === materials.length - 1;
+    matName.textContent  = mat.name;
+    matPath.textContent  = `Saved: ${mat.saved_path || '(not downloaded)'}`;
+
+    applyMaterial(mat);
+    updateThumbs();
+  }
+
+  btnPrev.addEventListener('click', () => goTo(idx - 1));
+  btnNext.addEventListener('click', () => goTo(idx + 1));
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowLeft'  || e.key === 'a') goTo(idx - 1);
+    if (e.key === 'ArrowRight' || e.key === 'd') goTo(idx + 1);
+  });
+
+  // ── Resize ────────────────────────────────────────────────────────────────
+  function onResize() {
+    const w = canvasEl.clientWidth;
+    const h = canvasEl.clientHeight;
+    renderer.setSize(w, h, false);
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+  }
+  new ResizeObserver(onResize).observe(canvasEl);
+  onResize();
+
+  // ── Render loop ───────────────────────────────────────────────────────────
+  function animate() {
+    requestAnimationFrame(animate);
+    controls.update();
+    renderer.render(scene, camera);
+  }
+  animate();
+
+  // ── Init ──────────────────────────────────────────────────────────────────
+  if (materials.length === 0) {
+    loadingText.textContent = 'No materials to display.';
+  } else {
+    goTo(0);
+  }
+</script>
+</body>
+</html>
