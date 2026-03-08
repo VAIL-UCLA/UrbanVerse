@@ -18,10 +18,10 @@ autonomous driving and urban simulation.
 - [API Cheatsheet](#api-cheatsheet)
 - [API Reference](#api-reference)
   - [Configuration](#configuration)
-  - [Object Assets — `uva.object](#object-assets--uvaobject)`
-  - [Material Assets — `uva.sky` / `uva.road` / `uva.sidewalk` / `uva.terrain](#material-assets)`
-  - [Vegetation Assets — `uva.plant` / `uva.shrub` / `uva.tree](#vegetation-assets)`
-  - [Viewers — `uva.viewer](#viewers--uvaviewer)`
+  - [Object Assets — `uva.object`](#object-assets--uvaobject)
+  - [Material Assets — `uva.sky` / `uva.road` / `uva.sidewalk` / `uva.terrain]`](#material-assets)
+  - [Vegetation Assets — `uva.plant` / `uva.shrub` / `uva.tree`](#vegetation-assets)
+  - [Viewers — `uva.viewer`](#viewers--uvaviewer)
 - [Caching & Storage](#caching--storage)
 - [Authentication](#authentication)
 - [IsaacSim Integration](#isaacsim-integration)
