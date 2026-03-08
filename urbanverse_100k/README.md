@@ -24,7 +24,6 @@ autonomous driving and urban simulation.
   - [Viewers — `uva.viewer`](#viewers--uvaviewer)
 - [Caching & Storage](#caching--storage)
 - [Authentication](#authentication)
-- [IsaacSim Integration](#isaacsim-integration)
 
 ---
 
@@ -903,32 +902,6 @@ Or log in via the HuggingFace CLI:
 
 ```bash
 huggingface-cli login
-```
-
----
-
-## IsaacSim Integration
-
-The `uva.object.convert_glb_to_usd()` function converts metric-scale GLB assets
-into IsaacSim-ready USD files with collision meshes. This requires NVIDIA
-IsaacSim and Isaac Lab:
-
-```bash
-# Install IsaacSim 4.5.0
-pip install --upgrade pip
-pip install 'isaacsim[all,extscache]==4.5.0' --extra-index-url https://pypi.nvidia.com
-
-# Install Isaac Lab (from within the package directory)
-cd urbanverse_asset/IsaacLab
-./isaaclab.sh --install
-```
-
-```python
-result = uva.object.convert_glb_to_usd(
-    uids=uids[:5],
-    headless=True,
-    collision_approximation="convexDecomposition",
-)
 ```
 
 ---
