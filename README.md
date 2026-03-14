@@ -1,9 +1,12 @@
 # UrbanVerse: Scaling Urban Simulation by Watching City-Tour Videos
 
-**Technical report, arXiv:2510.15018, 2025**
+**ICLR, 2026**
 
 [![Project Page](https://img.shields.io/badge/🌐-Project%20Page-3c78d8?style=flat-square)](https://urbanverseproject.github.io/)
 [![arXiv](https://img.shields.io/badge/arXiv-Paper-b31b1b?style=flat-square)](https://arxiv.org/abs/2510.15018)
+[![Code](https://img.shields.io/badge/GitHub-Code-181717?style=flat-square&logo=github)](https://github.com/VAIL-UCLA/UrbanVerse)
+[![UrbanVerse-100K Dataset](https://img.shields.io/badge/HuggingFace-Dataset-yellow?style=flat-square&logo=huggingface)](https://huggingface.co/datasets/Oatmealliu/UrbanVerse-100K)
+
 
 ---
 
