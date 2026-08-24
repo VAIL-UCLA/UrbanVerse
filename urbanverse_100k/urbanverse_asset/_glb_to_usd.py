@@ -106,11 +106,43 @@ app_launcher = AppLauncher(args_cli)
 simulation_app = app_launcher.app
 
 # ── Imports that require the Omniverse runtime ────────────────────────────
+import dataclasses  # noqa: E402
 import json  # noqa: E402
 import os  # noqa: E402
 
 from isaaclab.sim.converters import MeshConverter, MeshConverterCfg  # noqa: E402
 from isaaclab.sim.schemas import schemas_cfg  # noqa: E402
+
+# Isaac Sim 4.5 took ``collision_approximation="convexDecomposition"``; Isaac Sim
+# >= 5 dropped that field in favour of a ``mesh_collision_props`` cfg object.
+# Detect which API is installed so this script works on both.
+_LEGACY_COLLISION_API = "collision_approximation" in {
+    f.name for f in dataclasses.fields(MeshConverterCfg)
+}
+
+_COLLISION_CFG = {
+    "convexDecomposition": "ConvexDecompositionPropertiesCfg",
+    "convexHull": "ConvexHullPropertiesCfg",
+    "boundingCube": "BoundingCubePropertiesCfg",
+    "boundingSphere": "BoundingSpherePropertiesCfg",
+    "meshSimplification": "TriangleMeshSimplificationPropertiesCfg",
+}
+
+
+def collision_kwargs(approximation: str) -> dict:
+    """Collision arguments for whichever ``MeshConverterCfg`` API is installed."""
+    if _LEGACY_COLLISION_API:
+        return {"collision_approximation": approximation}
+    if approximation == "none":
+        return {}
+    cls_name = _COLLISION_CFG.get(approximation)
+    cls = getattr(schemas_cfg, cls_name, None) if cls_name else None
+    if cls is None:
+        raise SystemExit(
+            f"ERROR: collision approximation '{approximation}' is unavailable in "
+            f"this Isaac Lab build (no schemas_cfg.{cls_name})."
+        )
+    return {"mesh_collision_props": cls()}
 
 
 def main() -> None:
@@ -132,6 +164,7 @@ def main() -> None:
     collision_props = schemas_cfg.CollisionPropertiesCfg(
         collision_enabled=args_cli.collision_approximation != "none",
     )
+    coll_kwargs = collision_kwargs(args_cli.collision_approximation)
 
     results = []
 
@@ -157,7 +190,7 @@ def main() -> None:
                 usd_dir=usd_dir,
                 usd_file_name=usd_name,
                 make_instanceable=args_cli.make_instanceable,
-                collision_approximation=args_cli.collision_approximation,
+                **coll_kwargs,
             )
             converter = MeshConverter(cfg)
             usd_path = converter.usd_path
