@@ -48,6 +48,10 @@ src.add_argument("--tasks", type=str, help="Task JSON ({'tasks':[{glb,usd_dir,us
 parser.add_argument("--out-dir", type=str, default=None, help="USD output root (--glb-root mode).")
 parser.add_argument("--profile-dir", type=str, default="profiles", help="Where to write profiles.")
 parser.add_argument("--limit", type=int, default=0, help="Max assets to convert (0 = all).")
+parser.add_argument("--skip-existing", action=argparse.BooleanOptionalAction, default=True,
+                    help="Resume: skip assets whose output USD already exists (default: on).")
+parser.add_argument("--shard", type=str, default=None, metavar="I/N",
+                    help="Convert only shard I of N (1-based), for parallel workers.")
 parser.add_argument("--glb-name", type=str, default="{uid}.glb",
                     help="GLB filename template inside each uid dir.")
 parser.add_argument("--collision-approximation", type=str, default="convexDecomposition",
@@ -190,10 +194,41 @@ def build_tasks():
 
 def main() -> None:
     tasks = build_tasks()
-    if args_cli.limit:
-        tasks = tasks[: args_cli.limit]
     if not tasks:
         raise SystemExit("no GLB assets found")
+    found = len(tasks)
+
+    if args_cli.shard:
+        try:
+            shard_i, shard_n = (int(x) for x in args_cli.shard.split("/"))
+        except ValueError:
+            raise SystemExit("--shard must look like I/N, e.g. 2/8") from None
+        if not 1 <= shard_i <= shard_n:
+            raise SystemExit(f"--shard {args_cli.shard}: need 1 <= I <= N")
+        # Stride rather than block, so every worker keeps the category mix.
+        tasks = tasks[shard_i - 1 :: shard_n]
+    found_shard = len(tasks)
+
+    skipped = 0
+    if args_cli.skip_existing:
+        keep = []
+        for t in tasks:
+            out = Path(t["usd_dir"]) / t["usd_name"]
+            if out.exists() and out.stat().st_size > 0:
+                skipped += 1
+            else:
+                keep.append(t)
+        tasks = keep
+
+    if args_cli.limit:
+        tasks = tasks[: args_cli.limit]
+
+    print(f"[profile] {found} found"
+          + (f", shard {args_cli.shard} -> {found_shard}" if args_cli.shard else "")
+          + f", {skipped} already converted, {len(tasks)} to convert")
+    if not tasks:
+        print("[profile] nothing to do - every requested asset is already converted.")
+        return
 
     profile_dir = Path(args_cli.profile_dir).resolve()
     profile_dir.mkdir(parents=True, exist_ok=True)
@@ -271,6 +306,8 @@ def main() -> None:
 
     summary = {
         "assets_attempted": len(records),
+        "assets_skipped_existing": skipped,
+        "shard": args_cli.shard,
         "assets_ok": len(ok),
         "assets_failed": len(records) - len(ok),
         "startup_s": round(_STARTUP_S, 2),
