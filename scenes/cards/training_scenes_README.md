@@ -1,5 +1,5 @@
 ---
-license: cc-by-nc-sa-4.0
+license: cc-by-4.0
 task_categories:
   - robotics
 tags:

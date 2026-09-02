@@ -1,5 +1,5 @@
 ---
-license: cc-by-nc-sa-4.0
+license: odc-by
 task_categories:
   - robotics
 tags:
@@ -10,6 +10,35 @@ tags:
   - simulation
   - 3d-assets
 pretty_name: UrbanVerse Assets (Sim-Ready)
+extra_gated_fields:
+  Full Name: text
+  Email Address: text
+  Country: country
+  Institution: text
+  Sector of Institution:
+    type: select
+    options:
+      - Academic/Education
+      - Corporation
+      - Startup
+      - Government
+      - Non-profit Organization
+      - Individual
+      - Other
+  Purpose:
+    type: select
+    options:
+      - Embodied AI
+      - Physical AI
+      - 3D Generation
+      - Reinforcement Learning
+      - Imitation Learning
+      - Computer Vision
+      - Autonomous Driving
+      - Generative Models
+      - Multimodal Large Language Models
+      - Visual Question Answering
+  I accept the conditions and licenses of the files contained in this dataset: checkbox
 ---
 
 # UrbanVerse-Assets-Sim-ready
