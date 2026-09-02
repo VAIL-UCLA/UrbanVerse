@@ -630,6 +630,7 @@ IsaacSim and Isaac Lab.**
 | `collision_approximation` | `str`                 | `"convexDecomposition"` | Collision mesh strategy.     |
 | `make_instanceable`       | `bool`                | `False`                 | Generate instanceable USD.   |
 | `mass`                    | `float` or `None`     | `None`                  | Override mass in kg.         |
+| `yup_to_zup`              | `bool`                | `True`                  | Bake +90° X so the Y-up GLB is upright in Z-up Isaac Sim. |
 
 
 ```python

@@ -95,6 +95,11 @@ parser.add_argument(
     "--mass", type=float, default=None,
     help="Mass in kg to assign to converted assets.",
 )
+parser.add_argument(
+    "--no-yup-to-zup", action="store_true", default=False,
+    help="Keep the GLB's Y-up geometry as-is instead of baking the +90 deg X "
+         "rotation that makes the USD Z-up (upright in Isaac Sim).",
+)
 
 # AppLauncher injects its own CLI args (headless, etc.)
 from isaaclab.app import AppLauncher  # noqa: E402
@@ -166,6 +171,14 @@ def main() -> None:
     )
     coll_kwargs = collision_kwargs(args_cli.collision_approximation)
 
+    # glTF is Y-up, and MeshConverter references that geometry unrotated into a
+    # Z-up stage, so without this the asset lies on its side in Isaac Sim.
+    # Quaternion (w, x, y, z): +90 deg about X maps +Y onto +Z.
+    if args_cli.no_yup_to_zup:
+        rotation = (1.0, 0.0, 0.0, 0.0)
+    else:
+        rotation = (0.7071068, 0.7071068, 0.0, 0.0)
+
     results = []
 
     for task in tasks:
@@ -190,6 +203,7 @@ def main() -> None:
                 usd_dir=usd_dir,
                 usd_file_name=usd_name,
                 make_instanceable=args_cli.make_instanceable,
+                rotation=rotation,
                 **coll_kwargs,
             )
             converter = MeshConverter(cfg)

@@ -445,6 +445,7 @@ def convert_glb_to_usd(
     collision_approximation: str = "convexDecomposition",
     make_instanceable: bool = False,
     mass: Optional[float] = None,
+    yup_to_zup: bool = True,
 ) -> Dict[str, Any]:
     """Convert standardised GLB assets to IsaacSim-ready USD format.
 
@@ -467,6 +468,9 @@ def convert_glb_to_usd(
                      (default ``"convexDecomposition"``).
         make_instanceable: Make assets instanceable (default ``False``).
         mass:        Mass in kg to assign to assets (default ``None``).
+        yup_to_zup:  Bake a +90 deg X rotation so the Y-up GLB geometry
+                     stands upright in Isaac Sim's Z-up stage
+                     (default ``True``).
 
     Returns:
         ``{uid: Path | None}`` — absolute path to ``.usd`` or ``None``
@@ -576,6 +580,8 @@ def convert_glb_to_usd(
         cmd.append("--make-instanceable")
     if mass is not None:
         cmd.extend(["--mass", str(mass)])
+    if not yup_to_zup:
+        cmd.append("--no-yup-to-zup")
 
     print(f"[urbanverse] Launching Isaac Lab converter for {len(tasks)} asset(s)...")
     print(f"[urbanverse] Command: {' '.join(cmd)}")
