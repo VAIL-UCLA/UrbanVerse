@@ -1,0 +1,30 @@
+{
+ "root": "/media/hollis/Extreme SSD1/UrbanVerse-Training-Scenes",
+ "pattern": "World0.usd",
+ "policy": {
+  "scale": 1.0,
+  "value": "mdl-default",
+  "keep_float2": true,
+  "mdl_default_fallback": 1.0
+ },
+ "scenes": {
+  "Africa_Egypt_Cairo_walk_02_Cousin_01": {
+   "scene": "Africa_Egypt_Cairo_walk_02_Cousin_01",
+   "root_usd": "Africa_Egypt_Cairo_walk_02_Cousin_01/World0.usd",
+   "ok": true,
+   "layers_changed": [
+    {
+     "layer": "Africa_Egypt_Cairo_walk_02_Cousin_01/World0.usd",
+     "attrs_fixed": 25,
+     "sha256": "e36d18f65be2d0458421368d5c209e55ab3ee37daad75e8dd40645348042dd05",
+     "bytes": 27457
+    }
+   ],
+   "attrs_fixed": 25,
+   "error": null,
+   "layers_in_composition": 26,
+   "scalar_left": 0,
+   "seconds": 0.1
+  }
+ }
+}
