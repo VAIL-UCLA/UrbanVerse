@@ -58,7 +58,8 @@ Converting all UrbanVerse assets & scenarios to simulation-ready (Isaac Sim ≥ 
 
 | | HuggingFace | source | what changed |
 | --- | --- | --- | --- |
-| Scenes | [UCLA-VAIL/UrbanVerse-Training-Scenes-Sim-Ready](https://huggingface.co/datasets/UCLA-VAIL/UrbanVerse-Training-Scenes-Sim-Ready) | [UrbanVerse-Training-Scenes](https://huggingface.co/datasets/UCLA-VAIL/UrbanVerse-Training-Scenes) (107) + [CraftBench](https://huggingface.co/datasets/Oatmealliu/UrbanVerse-CraftBench) (12) | ground-material `texture_scale` re-authored as `float2` so roads/sidewalks/terrain render in Isaac Sim 5.x |
+| Training scenes | [UCLA-VAIL/UrbanVerse-Training-Scenes-Sim-Ready](https://huggingface.co/datasets/UCLA-VAIL/UrbanVerse-Training-Scenes-Sim-Ready) | [UrbanVerse-Training-Scenes](https://huggingface.co/datasets/UCLA-VAIL/UrbanVerse-Training-Scenes) (107) | ground-material `texture_scale` re-authored as `float2` so roads/sidewalks/terrain render in Isaac Sim 5.x |
+| CraftBench scenes | upload pending | [UrbanVerse-CraftBench](https://huggingface.co/datasets/Oatmealliu/UrbanVerse-CraftBench) (12) | same fix; converted, see [`scenes/craftbench_simready_manifest.json`](scenes/craftbench_simready_manifest.json) |
 | Assets | [UCLA-VAIL/UrbanVerse-Assets-Sim-ready](https://huggingface.co/datasets/UCLA-VAIL/UrbanVerse-Assets-Sim-ready) | [UrbanVerse-100K](https://huggingface.co/datasets/Oatmealliu/UrbanVerse-100K) | GLB → USD: Z-up, metric, base on `z=0`, rigid body + convex-decomposition collision |
 
 <img src="material/simready_scene03_before_after.png" alt="CraftBench scene_03: Isaac Sim 4.5 preview, the same USD in Isaac Sim 5.1, and the sim-ready version in 5.1" style="width: 100%;" />
