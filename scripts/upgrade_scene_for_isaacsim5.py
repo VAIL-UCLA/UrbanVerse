@@ -18,6 +18,13 @@ on 5.1 and log:
 This script rewrites every scalar ``inputs:texture_scale`` attribute spec
 as ``Gf.Vec2f(v, v)`` with ``SdfValueTypeNames.Float2`` in the layer where
 the opinion lives, preserving custom + connectability metadata.
+
+Not every MDL declares ``texture_scale`` as ``float2``: some of the custom
+materials shipped with UrbanVerse scenes declare it as a plain ``float``
+(``uv * texture_scale``). For each Shader the script reads the MDL it points
+at (``info:mdl:sourceAsset`` + ``subIdentifier``) and matches the declared
+type - ``float2`` gets ``Float2``, ``float`` gets ``Float``. Shaders whose
+MDL cannot be found or parsed fall back to ``Float2`` (the vMaterials case).
 """
 from __future__ import annotations
 
@@ -25,10 +32,75 @@ import argparse
 from pathlib import Path
 import sys
 
+import re
+
 from pxr import Gf, Sdf
 
 
 _USD_EXTS = {".usd", ".usda", ".usdc", ".usdz"}
+_MDL_TYPE_CACHE: dict[tuple[str, str], str | None] = {}
+
+
+_NUM = r"[-+]?(?:\d+\.\d*|\.\d+|\d+)(?:[eE][-+]?\d+)?[fF]?"
+
+
+def _mdl_texture_scale_decl(mdl_path: str, material: str) -> tuple[str, tuple[float, float] | None] | None:
+    """(type, default) of ``texture_scale`` in ``export material <material>(...)``.
+
+    type is 'float' or 'float2'; default is (x, y) or None if it could not be
+    parsed. Returns None if the file is missing, the material is not found,
+    or it has no ``texture_scale`` parameter.
+    """
+    key = (mdl_path, material)
+    if key in _MDL_TYPE_CACHE:
+        return _MDL_TYPE_CACHE[key]
+    result = None
+    try:
+        text = Path(mdl_path).read_text(errors="replace")
+        m = re.search(r"export\s+material\s+" + re.escape(material) + r"\s*\(", text)
+        if m:
+            # Walk the parameter list to its matching ')' (defaults like
+            # float2(0.5f) and [[ annotations ]] nest parentheses).
+            i, depth = m.end(), 1
+            while i < len(text) and depth:
+                depth += {"(": 1, ")": -1}.get(text[i], 0)
+                i += 1
+            params = text[m.end():i]
+            t = re.search(r"\b(float2|float)\s+texture_scale\b\s*(?:=\s*([^\[,]*?))?\s*(?:\[\[|,|$)",
+                          params, re.S)
+            if t:
+                typ, default_src = t.group(1), (t.group(2) or "").strip()
+                # "float2(0.5f)" / "float2(1.f, 2.f)" / bare "1.0" - the digits
+                # in the constructor name itself must not be read as a value.
+                inner = re.search(r"\bfloat2?\s*\(([^)]*)\)", default_src)
+                default_src = inner.group(1) if inner else default_src
+                nums = [float(n.rstrip("fF")) for n in re.findall(_NUM, default_src)]
+                default = None
+                if nums:
+                    default = (nums[0], nums[1]) if len(nums) >= 2 else (nums[0], nums[0])
+                result = (typ, default)
+    except OSError:
+        result = None
+    _MDL_TYPE_CACHE[key] = result
+    return result
+
+
+def _shader_mdl_decl(prim_spec: Sdf.PrimSpec) -> tuple[str, tuple[float, float] | None] | None:
+    src = prim_spec.attributes.get("info:mdl:sourceAsset")
+    sub = prim_spec.attributes.get("info:mdl:sourceAsset:subIdentifier")
+    if src is None or sub is None or src.default is None or not sub.default:
+        return None
+    ap = getattr(src.default, "path", None) or str(src.default).strip("@")
+    if not ap:
+        return None
+    mdl_path = prim_spec.layer.ComputeAbsolutePath(ap)
+    return _mdl_texture_scale_decl(mdl_path, str(sub.default))
+
+
+def _shader_target_type(prim_spec: Sdf.PrimSpec) -> str:
+    """'float' or 'float2' for this Shader's texture_scale, per its MDL; float2 if unknown."""
+    decl = _shader_mdl_decl(prim_spec)
+    return decl[0] if decl else "float2"
 _SCALAR_TYPES = {
     Sdf.ValueTypeNames.Int,
     Sdf.ValueTypeNames.Float,
@@ -47,7 +119,8 @@ def _all_prim_specs(layer: Sdf.Layer):
 
 
 def _patch_prim_spec(prim_spec: Sdf.PrimSpec, dry_run: bool,
-                     scale: float = 1.0, override_value: float | None = None) -> int:
+                     scale: float = 1.0, override_value: float | str | None = None,
+                     keep_float2: bool = False, mdl_default_fallback: float = 1.0) -> int:
     attr_spec = prim_spec.attributes.get("inputs:texture_scale")
     if attr_spec is None:
         return 0
@@ -56,8 +129,21 @@ def _patch_prim_spec(prim_spec: Sdf.PrimSpec, dry_run: bool,
     if val is None:
         return 0
 
+    want = _shader_target_type(prim_spec)
+    if override_value == "mdl-default":
+        # Isaac Sim 4.5 rejected the scalar too (same UsdToMdl error) and fell
+        # back to the MDL parameter default, so that default is what the
+        # scenes actually looked like; reproduce it. Unknown -> fallback.
+        decl = _shader_mdl_decl(prim_spec)
+        if decl and decl[1] is not None:
+            override_value = decl[1][0]  # isotropic; anisotropic defaults are rare
+        else:
+            override_value = mdl_default_fallback
+
     # Case A: already Float2 — just rewrite the default value in place.
-    if attr_spec.typeName == Sdf.ValueTypeNames.Float2:
+    if attr_spec.typeName == Sdf.ValueTypeNames.Float2 and want == "float2":
+        if keep_float2:
+            return 0
         try:
             vx = float(val[0])
             vy = float(val[1])
@@ -80,20 +166,38 @@ def _patch_prim_spec(prim_spec: Sdf.PrimSpec, dry_run: bool,
             attr_spec.default = Gf.Vec2f(target_x, target_y)
         return 1
 
-    # Case B: scalar int/float/double/half — requires type change.
-    if attr_spec.typeName not in _SCALAR_TYPES:
+    # Case B: type change needed. Scalar int/float/double/half -> the MDL's
+    # declared type; a Float2 authored against a float MDL param -> Float.
+    if attr_spec.typeName == Sdf.ValueTypeNames.Float2:
+        try:
+            fval = float(val[0])
+        except (TypeError, IndexError, ValueError):
+            return 0
+    elif attr_spec.typeName in _SCALAR_TYPES:
+        try:
+            fval = float(val)
+        except (TypeError, ValueError):
+            return 0
+    else:
         return 0
-    try:
-        fval = float(val)
-    except (TypeError, ValueError):
-        return 0
+    if want == "float" and attr_spec.typeName == Sdf.ValueTypeNames.Float:
+        # Already the right scalar type; only the value policy applies.
+        target = float(override_value) if override_value is not None else fval * scale
+        if abs(target - fval) < 1e-9:
+            return 0
+        print(f"  {attr_spec.path}  Float({fval}) -> Float({target})")
+        if not dry_run:
+            attr_spec.default = float(target)
+        return 1
     if override_value is not None:
         target = float(override_value)
     else:
         target = fval * scale
-    new_val = Gf.Vec2f(target, target)
-    print(f"  {attr_spec.path}  {attr_spec.typeName}({val}) "
-          f"-> Float2({target}, {target})")
+    if want == "float":
+        new_type, new_val, shown = Sdf.ValueTypeNames.Float, float(target), f"Float({target})"
+    else:
+        new_type, new_val, shown = Sdf.ValueTypeNames.Float2, Gf.Vec2f(target, target), f"Float2({target}, {target})"
+    print(f"  {attr_spec.path}  {attr_spec.typeName}({val}) -> {shown}  [mdl: {want}]")
 
     if dry_run:
         return 1
@@ -112,7 +216,7 @@ def _patch_prim_spec(prim_spec: Sdf.PrimSpec, dry_run: bool,
     new_attr = Sdf.AttributeSpec(
         prim_spec,
         "inputs:texture_scale",
-        Sdf.ValueTypeNames.Float2,
+        new_type,
         variability=Sdf.VariabilityVarying,
     )
     new_attr.default = new_val
@@ -126,9 +230,10 @@ def _patch_prim_spec(prim_spec: Sdf.PrimSpec, dry_run: bool,
 
 
 def _patch_layer(layer_path: Path, dry_run: bool,
-                 scale: float = 1.0, override_value: float | None = None,
+                 scale: float = 1.0, override_value: float | str | None = None,
                  save_as: Path | None = None,
-                 asset_path_rewrites: dict[str, str] | None = None) -> int:
+                 asset_path_rewrites: dict[str, str] | None = None,
+                 keep_float2: bool = False, mdl_default_fallback: float = 1.0) -> int:
     print(f"[patching] {layer_path}")
     layer = Sdf.Layer.FindOrOpen(str(layer_path))
     if layer is None:
@@ -137,7 +242,9 @@ def _patch_layer(layer_path: Path, dry_run: bool,
     fixed = 0
     for prim_spec in _all_prim_specs(layer):
         fixed += _patch_prim_spec(prim_spec, dry_run,
-                                  scale=scale, override_value=override_value)
+                                  scale=scale, override_value=override_value,
+                                  keep_float2=keep_float2,
+                                  mdl_default_fallback=mdl_default_fallback)
 
     rewrote = 0
     if asset_path_rewrites:
@@ -231,6 +338,12 @@ def _gather_sublayers(root: Path) -> list[Path]:
     return result
 
 
+def _value_arg(text: str):
+    if text == "mdl-default":
+        return text
+    return float(text)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("usd", type=Path, help="root .usd/.usda/.usdc file")
@@ -240,8 +353,15 @@ def main() -> None:
                         help="also descend into referenced/payload sublayers")
     parser.add_argument("--scale", type=float, default=1.0,
                         help="multiplier applied to the original scalar (default 1.0, i.e. keep value)")
-    parser.add_argument("--value", type=float, default=None,
-                        help="override: always write this value instead of scaling the original")
+    parser.add_argument("--value", type=_value_arg, default=None,
+                        help="override: write this value instead of scaling the original. "
+                             "'mdl-default' uses each shader's MDL parameter default, which is "
+                             "what Isaac Sim 4.5 rendered after rejecting the scalar")
+    parser.add_argument("--mdl-default-fallback", type=float, default=1.0,
+                        help="value for --value mdl-default when the MDL cannot be read (default 1.0)")
+    parser.add_argument("--keep-float2", action="store_true",
+                        help="only retype broken scalar attributes; leave attributes that are "
+                             "already float2 (i.e. authored correctly) untouched even with --value/--scale")
     parser.add_argument("--suffix", type=str, default=None,
                         help="save each modified layer to a sibling file with this suffix on its "
                              "stem (e.g. '_texture_scaled' -> 'foo_texture_scaled.usd'). Leaves "
@@ -304,6 +424,8 @@ def main() -> None:
                 p, dry_run=args.dry_run,
                 scale=args.scale, override_value=args.value,
                 save_as=save_as, asset_path_rewrites=rewrites,
+                keep_float2=args.keep_float2,
+                mdl_default_fallback=args.mdl_default_fallback,
             )
 
         root_new = _suffixed_name(args.usd.resolve(), args.suffix)
@@ -315,7 +437,9 @@ def main() -> None:
         total = 0
         for t in targets:
             total += _patch_layer(t, dry_run=args.dry_run,
-                                  scale=args.scale, override_value=args.value)
+                                  scale=args.scale, override_value=args.value,
+                                  keep_float2=args.keep_float2,
+                                  mdl_default_fallback=args.mdl_default_fallback)
         verb = "would fix" if args.dry_run else "fixed"
         print(f"\ndone: {verb} {total} texture_scale attribute(s) across "
               f"{len(targets)} layer(s)")

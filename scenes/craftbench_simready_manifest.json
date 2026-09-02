@@ -1,0 +1,318 @@
+{
+ "root": "/media/hollis/Extreme SSD1/UrbanVerse-Scenes/CraftBench",
+ "pattern": "Collected_export_version/export_version.usd",
+ "policy": {
+  "scale": 1.0,
+  "value": "mdl-default",
+  "keep_float2": true,
+  "mdl_default_fallback": 1.0
+ },
+ "scenes": {
+  "scene_03_residential_street_dual_sidewalks_clean": {
+   "scene": "scene_03_residential_street_dual_sidewalks_clean",
+   "root_usd": "scene_03_residential_street_dual_sidewalks_clean/Collected_export_version/export_version.usd",
+   "ok": true,
+   "layers_changed": [
+    {
+     "layer": "scene_03_residential_street_dual_sidewalks_clean/Collected_export_version/home/boleilab/Documents/Collected_UrbanCousin_Sim2SimEval/home/boleilab/Documents/VR_demo/home/boleilab/Documents/VR/Collected_export_version/home/boleilab/Documents/VR/vr_bigtown/Collected_export_version_latest/Downloads/colls/Collected_t/t.usd",
+     "attrs_fixed": 7,
+     "sha256": "e0f1d709ad18fae4882819a55e523938d5cb7ec78e9a47185e2152a4df5116a3",
+     "bytes": 747965
+    },
+    {
+     "layer": "scene_03_residential_street_dual_sidewalks_clean/Collected_export_version/home/boleilab/Documents/Collected_UrbanCousin_Sim2SimEval/home/boleilab/Documents/VR_demo/home/boleilab/Documents/VR/Collected_export_version/home/boleilab/Documents/VR/vr_bigtown/Collected_export_version_latest/Downloads/colls/Collected_s/s.usd",
+     "attrs_fixed": 7,
+     "sha256": "d87ab8962c41f80fdd5744de5e92d00130709c071289cca1b51ea8a11f25cb2d",
+     "bytes": 453193
+    }
+   ],
+   "attrs_fixed": 14,
+   "error": null,
+   "layers_in_composition": 5,
+   "scalar_left": 0,
+   "seconds": 1.1
+  },
+  "scene_01_residential_street_dual_sidewalks_dense_bollards_trash_bags": {
+   "scene": "scene_01_residential_street_dual_sidewalks_dense_bollards_trash_bags",
+   "root_usd": "scene_01_residential_street_dual_sidewalks_dense_bollards_trash_bags/Collected_export_version/export_version.usd",
+   "ok": true,
+   "layers_changed": [
+    {
+     "layer": "scene_01_residential_street_dual_sidewalks_dense_bollards_trash_bags/Collected_export_version/home/boleilab/Documents/Collected_UrbanCousin_Sim2SimEval/home/boleilab/Documents/VR_demo/home/boleilab/Documents/VR/Collected_export_version/home/boleilab/Documents/VR/vr_bigtown/Collected_export_version_latest/Downloads/colls/Collected_t/t.usd",
+     "attrs_fixed": 7,
+     "sha256": "e0f1d709ad18fae4882819a55e523938d5cb7ec78e9a47185e2152a4df5116a3",
+     "bytes": 747965
+    },
+    {
+     "layer": "scene_01_residential_street_dual_sidewalks_dense_bollards_trash_bags/Collected_export_version/home/boleilab/Documents/Collected_UrbanCousin_Sim2SimEval/home/boleilab/Documents/VR_demo/home/boleilab/Documents/VR/Collected_export_version/home/boleilab/Documents/VR/vr_bigtown/Collected_export_version_latest/Downloads/colls/Collected_s/s.usd",
+     "attrs_fixed": 7,
+     "sha256": "d87ab8962c41f80fdd5744de5e92d00130709c071289cca1b51ea8a11f25cb2d",
+     "bytes": 453193
+    }
+   ],
+   "attrs_fixed": 14,
+   "error": null,
+   "layers_in_composition": 5,
+   "scalar_left": 0,
+   "seconds": 1.5
+  },
+  "scene_05_japanese_tourist_street_dual_sidewalks_blocked_by_vehicles": {
+   "scene": "scene_05_japanese_tourist_street_dual_sidewalks_blocked_by_vehicles",
+   "root_usd": "scene_05_japanese_tourist_street_dual_sidewalks_blocked_by_vehicles/Collected_export_version/export_version.usd",
+   "ok": true,
+   "layers_changed": [
+    {
+     "layer": "scene_05_japanese_tourist_street_dual_sidewalks_blocked_by_vehicles/Collected_export_version/home/boleilab/Documents/sim2sim_test_scenes/scene_02/Collected_export_version/home/boleilab/Documents/Collected_UrbanCousin_Sim2SimEval/home/boleilab/Documents/VR_demo/home/boleilab/Documents/VR/Collected_export_version/home/boleilab/Documents/VR/vr_bigtown/Collected_export_version_latest/Downloads/colls/Collected_t/t.usd",
+     "attrs_fixed": 7,
+     "sha256": "e0f1d709ad18fae4882819a55e523938d5cb7ec78e9a47185e2152a4df5116a3",
+     "bytes": 747965
+    },
+    {
+     "layer": "scene_05_japanese_tourist_street_dual_sidewalks_blocked_by_vehicles/Collected_export_version/home/boleilab/Documents/sim2sim_test_scenes/scene_02/Collected_export_version/home/boleilab/Documents/Collected_UrbanCousin_Sim2SimEval/home/boleilab/Documents/VR_demo/home/boleilab/Documents/VR/Collected_export_version/home/boleilab/Documents/VR/vr_bigtown/Collected_export_version_latest/Downloads/colls/Collected_s/s.usd",
+     "attrs_fixed": 7,
+     "sha256": "d87ab8962c41f80fdd5744de5e92d00130709c071289cca1b51ea8a11f25cb2d",
+     "bytes": 453193
+    }
+   ],
+   "attrs_fixed": 14,
+   "error": null,
+   "layers_in_composition": 5,
+   "scalar_left": 0,
+   "seconds": 1.5
+  },
+  "scene_02_residential_street_single_sidewalk_door_to_street_buildings": {
+   "scene": "scene_02_residential_street_single_sidewalk_door_to_street_buildings",
+   "root_usd": "scene_02_residential_street_single_sidewalk_door_to_street_buildings/Collected_export_version/export_version.usd",
+   "ok": true,
+   "layers_changed": [
+    {
+     "layer": "scene_02_residential_street_single_sidewalk_door_to_street_buildings/Collected_export_version/home/boleilab/Documents/sim2sim_test_scenes/scene_02/Collected_export_version/home/boleilab/Documents/Collected_UrbanCousin_Sim2SimEval/home/boleilab/Documents/VR_demo/home/boleilab/Documents/VR/Collected_export_version/home/boleilab/Documents/VR/vr_bigtown/Collected_export_version_latest/Downloads/colls/Collected_t/t.usd",
+     "attrs_fixed": 7,
+     "sha256": "e0f1d709ad18fae4882819a55e523938d5cb7ec78e9a47185e2152a4df5116a3",
+     "bytes": 747965
+    },
+    {
+     "layer": "scene_02_residential_street_single_sidewalk_door_to_street_buildings/Collected_export_version/home/boleilab/Documents/sim2sim_test_scenes/scene_02/Collected_export_version/home/boleilab/Documents/Collected_UrbanCousin_Sim2SimEval/home/boleilab/Documents/VR_demo/home/boleilab/Documents/VR/Collected_export_version/home/boleilab/Documents/VR/vr_bigtown/Collected_export_version_latest/Downloads/colls/Collected_s/s.usd",
+     "attrs_fixed": 7,
+     "sha256": "d87ab8962c41f80fdd5744de5e92d00130709c071289cca1b51ea8a11f25cb2d",
+     "bytes": 453193
+    }
+   ],
+   "attrs_fixed": 14,
+   "error": null,
+   "layers_in_composition": 5,
+   "scalar_left": 0,
+   "seconds": 1.6
+  },
+  "scene_06_bar_street_dual_sidewalks_obstructed_fallen_scooters": {
+   "scene": "scene_06_bar_street_dual_sidewalks_obstructed_fallen_scooters",
+   "root_usd": "scene_06_bar_street_dual_sidewalks_obstructed_fallen_scooters/Collected_export_version/export_version.usd",
+   "ok": true,
+   "layers_changed": [
+    {
+     "layer": "scene_06_bar_street_dual_sidewalks_obstructed_fallen_scooters/Collected_export_version/home/boleilab/Documents/sim2sim_test_scenes/scene_06/Collected_export_version/home/boleilab/Documents/sim2sim_test_scenes/scene_05/Collected_export_version/home/boleilab/Documents/sim2sim_test_scenes/scene_02/Collected_export_version/home/boleilab/Documents/Collected_UrbanCousin_Sim2SimEval/home/boleilab/Documents/VR_demo/home/boleilab/Documents/VR/Collected_export_version/home/boleilab/Documents/VR/vr_bigtown/Collected_export_version_latest/Downloads/colls/Collected_t/t.usd",
+     "attrs_fixed": 7,
+     "sha256": "e0f1d709ad18fae4882819a55e523938d5cb7ec78e9a47185e2152a4df5116a3",
+     "bytes": 747965
+    },
+    {
+     "layer": "scene_06_bar_street_dual_sidewalks_obstructed_fallen_scooters/Collected_export_version/home/boleilab/Documents/sim2sim_test_scenes/scene_06/Collected_export_version/home/boleilab/Documents/sim2sim_test_scenes/scene_05/Collected_export_version/home/boleilab/Documents/sim2sim_test_scenes/scene_02/Collected_export_version/home/boleilab/Documents/Collected_UrbanCousin_Sim2SimEval/home/boleilab/Documents/VR_demo/home/boleilab/Documents/VR/Collected_export_version/home/boleilab/Documents/VR/vr_bigtown/Collected_export_version_latest/Downloads/colls/Collected_s/s.usd",
+     "attrs_fixed": 7,
+     "sha256": "d87ab8962c41f80fdd5744de5e92d00130709c071289cca1b51ea8a11f25cb2d",
+     "bytes": 453193
+    }
+   ],
+   "attrs_fixed": 14,
+   "error": null,
+   "layers_in_composition": 6,
+   "scalar_left": 0,
+   "seconds": 1.7
+  },
+  "scene_04_commercial_street_asymmetric_sidewalks_benches_bicycles": {
+   "scene": "scene_04_commercial_street_asymmetric_sidewalks_benches_bicycles",
+   "root_usd": "scene_04_commercial_street_asymmetric_sidewalks_benches_bicycles/Collected_export_version/export_version.usd",
+   "ok": true,
+   "layers_changed": [
+    {
+     "layer": "scene_04_commercial_street_asymmetric_sidewalks_benches_bicycles/Collected_export_version/home/boleilab/Documents/sim2sim_test_scenes/scene_02/Collected_export_version/home/boleilab/Documents/Collected_UrbanCousin_Sim2SimEval/home/boleilab/Documents/VR_demo/home/boleilab/Documents/VR/Collected_export_version/home/boleilab/Documents/VR/vr_bigtown/Collected_export_version_latest/Downloads/colls/Collected_t/t.usd",
+     "attrs_fixed": 7,
+     "sha256": "e0f1d709ad18fae4882819a55e523938d5cb7ec78e9a47185e2152a4df5116a3",
+     "bytes": 747965
+    },
+    {
+     "layer": "scene_04_commercial_street_asymmetric_sidewalks_benches_bicycles/Collected_export_version/home/boleilab/Documents/sim2sim_test_scenes/scene_02/Collected_export_version/home/boleilab/Documents/Collected_UrbanCousin_Sim2SimEval/home/boleilab/Documents/VR_demo/home/boleilab/Documents/VR/Collected_export_version/home/boleilab/Documents/VR/vr_bigtown/Collected_export_version_latest/Downloads/colls/Collected_s/s.usd",
+     "attrs_fixed": 7,
+     "sha256": "d87ab8962c41f80fdd5744de5e92d00130709c071289cca1b51ea8a11f25cb2d",
+     "bytes": 453193
+    }
+   ],
+   "attrs_fixed": 14,
+   "error": null,
+   "layers_in_composition": 5,
+   "scalar_left": 0,
+   "seconds": 2.1
+  },
+  "scene_07_narrow_alley_outdoor_dining": {
+   "scene": "scene_07_narrow_alley_outdoor_dining",
+   "root_usd": "scene_07_narrow_alley_outdoor_dining/Collected_export_version/export_version.usd",
+   "ok": true,
+   "layers_changed": [
+    {
+     "layer": "scene_07_narrow_alley_outdoor_dining/Collected_export_version/home/boleilab/Documents/sim2sim_test_scenes/scene_07/Collected_export_version/home/boleilab/Documents/sim2sim_test_scenes/scene_06/Collected_export_version/home/boleilab/Documents/sim2sim_test_scenes/scene_05/Collected_export_version/home/boleilab/Documents/sim2sim_test_scenes/scene_02/Collected_export_version/home/boleilab/Documents/Collected_UrbanCousin_Sim2SimEval/home/boleilab/Documents/VR_demo/home/boleilab/Documents/VR/Collected_export_version/home/boleilab/Documents/VR/vr_bigtown/Collected_export_version_latest/Downloads/colls/Collected_t/t.usd",
+     "attrs_fixed": 7,
+     "sha256": "e0f1d709ad18fae4882819a55e523938d5cb7ec78e9a47185e2152a4df5116a3",
+     "bytes": 747965
+    },
+    {
+     "layer": "scene_07_narrow_alley_outdoor_dining/Collected_export_version/home/boleilab/Documents/sim2sim_test_scenes/scene_07/Collected_export_version/home/boleilab/Documents/sim2sim_test_scenes/scene_06/Collected_export_version/home/boleilab/Documents/sim2sim_test_scenes/scene_05/Collected_export_version/home/boleilab/Documents/sim2sim_test_scenes/scene_02/Collected_export_version/home/boleilab/Documents/Collected_UrbanCousin_Sim2SimEval/home/boleilab/Documents/VR_demo/home/boleilab/Documents/VR/Collected_export_version/home/boleilab/Documents/VR/vr_bigtown/Collected_export_version_latest/Downloads/colls/Collected_s/s.usd",
+     "attrs_fixed": 7,
+     "sha256": "d87ab8962c41f80fdd5744de5e92d00130709c071289cca1b51ea8a11f25cb2d",
+     "bytes": 453193
+    }
+   ],
+   "attrs_fixed": 14,
+   "error": null,
+   "layers_in_composition": 6,
+   "scalar_left": 0,
+   "seconds": 1.7
+  },
+  "scene_08_commercial_street_bike_lane_dual_sidewalks": {
+   "scene": "scene_08_commercial_street_bike_lane_dual_sidewalks",
+   "root_usd": "scene_08_commercial_street_bike_lane_dual_sidewalks/Collected_export_version/export_version.usd",
+   "ok": true,
+   "layers_changed": [
+    {
+     "layer": "scene_08_commercial_street_bike_lane_dual_sidewalks/Collected_export_version/home/boleilab/Documents/sim2sim_test_scenes/scene_08/Collected_export_version/home/boleilab/Documents/sim2sim_test_scenes/scene_04/Collected_export_version/home/boleilab/Documents/sim2sim_test_scenes/scene_02/Collected_export_version/home/boleilab/Documents/Collected_UrbanCousin_Sim2SimEval/home/boleilab/Documents/VR_demo/home/boleilab/Documents/VR/Collected_export_version/home/boleilab/Documents/VR/vr_bigtown/Collected_export_version_latest/Downloads/colls/Collected_t/t.usd",
+     "attrs_fixed": 7,
+     "sha256": "e0f1d709ad18fae4882819a55e523938d5cb7ec78e9a47185e2152a4df5116a3",
+     "bytes": 747965
+    },
+    {
+     "layer": "scene_08_commercial_street_bike_lane_dual_sidewalks/Collected_export_version/home/boleilab/Documents/sim2sim_test_scenes/scene_08/Collected_export_version/home/boleilab/Documents/sim2sim_test_scenes/scene_04/Collected_export_version/home/boleilab/Documents/sim2sim_test_scenes/scene_02/Collected_export_version/home/boleilab/Documents/Collected_UrbanCousin_Sim2SimEval/home/boleilab/Documents/VR_demo/home/boleilab/Documents/VR/Collected_export_version/home/boleilab/Documents/VR/vr_bigtown/Collected_export_version_latest/Downloads/colls/Collected_s/s.usd",
+     "attrs_fixed": 7,
+     "sha256": "d87ab8962c41f80fdd5744de5e92d00130709c071289cca1b51ea8a11f25cb2d",
+     "bytes": 453193
+    }
+   ],
+   "attrs_fixed": 14,
+   "error": null,
+   "layers_in_composition": 5,
+   "scalar_left": 0,
+   "seconds": 1.4
+  },
+  "scene_12_courtyard_plaza_central_fountain": {
+   "scene": "scene_12_courtyard_plaza_central_fountain",
+   "root_usd": "scene_12_courtyard_plaza_central_fountain/Collected_export_version/export_version.usd",
+   "ok": true,
+   "layers_changed": [
+    {
+     "layer": "scene_12_courtyard_plaza_central_fountain/Collected_export_version/home/boleilab/Documents/sim2sim_test_scenes/scene_12/Collected_export_version/home/boleilab/Documents/sim2sim_test_scenes/scene_01/Collected_export_version/home/boleilab/Documents/Collected_UrbanCousin_Sim2SimEval/home/boleilab/Documents/VR_demo/home/boleilab/Documents/VR/Collected_export_version/home/boleilab/Documents/VR/vr_bigtown/Collected_export_version_latest/Downloads/colls/Collected_t/t.usd",
+     "attrs_fixed": 7,
+     "sha256": "e0f1d709ad18fae4882819a55e523938d5cb7ec78e9a47185e2152a4df5116a3",
+     "bytes": 747965
+    },
+    {
+     "layer": "scene_12_courtyard_plaza_central_fountain/Collected_export_version/home/boleilab/Documents/sim2sim_test_scenes/scene_12/Collected_export_version/home/boleilab/Documents/sim2sim_test_scenes/scene_01/Collected_export_version/home/boleilab/Documents/Collected_UrbanCousin_Sim2SimEval/home/boleilab/Documents/VR_demo/home/boleilab/Documents/VR/Collected_export_version/home/boleilab/Documents/VR/vr_bigtown/Collected_export_version_latest/Downloads/colls/Collected_s/s.usd",
+     "attrs_fixed": 7,
+     "sha256": "d87ab8962c41f80fdd5744de5e92d00130709c071289cca1b51ea8a11f25cb2d",
+     "bytes": 453193
+    }
+   ],
+   "attrs_fixed": 14,
+   "error": null,
+   "layers_in_composition": 5,
+   "scalar_left": 0,
+   "seconds": 0.7
+  },
+  "scene_11_urban_park_dogs_sports_area": {
+   "scene": "scene_11_urban_park_dogs_sports_area",
+   "root_usd": "scene_11_urban_park_dogs_sports_area/Collected_export_version/export_version.usd",
+   "ok": true,
+   "layers_changed": [
+    {
+     "layer": "scene_11_urban_park_dogs_sports_area/Collected_export_version/home/boleilab/Documents/sim2sim_test_scenes/scene_11/Collected_export_version/home/boleilab/Documents/sim2sim_test_scenes/scene_04/Collected_export_version/home/boleilab/Documents/sim2sim_test_scenes/scene_02/Collected_export_version/home/boleilab/Documents/Collected_UrbanCousin_Sim2SimEval/home/boleilab/Documents/VR_demo/home/boleilab/Documents/VR/Collected_export_version/home/boleilab/Documents/VR/vr_bigtown/Collected_export_version_latest/Downloads/colls/Collected_t/t.usd",
+     "attrs_fixed": 7,
+     "sha256": "e0f1d709ad18fae4882819a55e523938d5cb7ec78e9a47185e2152a4df5116a3",
+     "bytes": 747965
+    },
+    {
+     "layer": "scene_11_urban_park_dogs_sports_area/Collected_export_version/home/boleilab/Documents/sim2sim_test_scenes/scene_11/Collected_export_version/home/boleilab/Documents/sim2sim_test_scenes/scene_04/Collected_export_version/home/boleilab/Documents/sim2sim_test_scenes/scene_02/Collected_export_version/home/boleilab/Documents/Collected_UrbanCousin_Sim2SimEval/home/boleilab/Documents/VR_demo/home/boleilab/Documents/VR/Collected_export_version/home/boleilab/Documents/VR/vr_bigtown/Collected_export_version_latest/Downloads/colls/Collected_s/s.usd",
+     "attrs_fixed": 7,
+     "sha256": "d87ab8962c41f80fdd5744de5e92d00130709c071289cca1b51ea8a11f25cb2d",
+     "bytes": 453193
+    }
+   ],
+   "attrs_fixed": 14,
+   "error": null,
+   "layers_in_composition": 6,
+   "scalar_left": 0,
+   "seconds": 1.2
+  },
+  "scene_09_cbd_t_intersection_construction_sites": {
+   "scene": "scene_09_cbd_t_intersection_construction_sites",
+   "root_usd": "scene_09_cbd_t_intersection_construction_sites/Collected_export_version/export_version.usd",
+   "ok": true,
+   "layers_changed": [
+    {
+     "layer": "scene_09_cbd_t_intersection_construction_sites/Collected_export_version/home/boleilab/Documents/sim2sim_test_scenes/scene_08/Collected_export_version/home/boleilab/Documents/sim2sim_test_scenes/scene_04/Collected_export_version/home/boleilab/Documents/sim2sim_test_scenes/scene_02/Collected_export_version/home/boleilab/Documents/Collected_UrbanCousin_Sim2SimEval/home/boleilab/Documents/VR_demo/home/boleilab/Documents/VR/Collected_export_version/home/boleilab/Documents/VR/vr_bigtown/Collected_export_version_latest/Downloads/colls/Collected_t/t.usd",
+     "attrs_fixed": 7,
+     "sha256": "e0f1d709ad18fae4882819a55e523938d5cb7ec78e9a47185e2152a4df5116a3",
+     "bytes": 747965
+    },
+    {
+     "layer": "scene_09_cbd_t_intersection_construction_sites/Collected_export_version/home/boleilab/Documents/sim2sim_test_scenes/scene_08/Collected_export_version/home/boleilab/Documents/sim2sim_test_scenes/scene_04/Collected_export_version/home/boleilab/Documents/sim2sim_test_scenes/scene_02/Collected_export_version/home/boleilab/Documents/Collected_UrbanCousin_Sim2SimEval/home/boleilab/Documents/VR_demo/home/boleilab/Documents/VR/Collected_export_version/home/boleilab/Documents/VR/vr_bigtown/Collected_export_version_latest/Downloads/colls/Collected_s/s.usd",
+     "attrs_fixed": 7,
+     "sha256": "d87ab8962c41f80fdd5744de5e92d00130709c071289cca1b51ea8a11f25cb2d",
+     "bytes": 453193
+    },
+    {
+     "layer": "scene_09_cbd_t_intersection_construction_sites/Collected_export_version/Ground_materials/Big_Block.usd",
+     "attrs_fixed": 14,
+     "sha256": "53e0d4c5e8f250eb5d96d36a359ff862fb6d2ebdb691c75dad72759ffeb9fe57",
+     "bytes": 5892120
+    }
+   ],
+   "attrs_fixed": 28,
+   "error": null,
+   "layers_in_composition": 6,
+   "scalar_left": 0,
+   "seconds": 1.5
+  },
+  "scene_10_cbd_cross_intersection_diverse_obstacles": {
+   "scene": "scene_10_cbd_cross_intersection_diverse_obstacles",
+   "root_usd": "scene_10_cbd_cross_intersection_diverse_obstacles/Collected_export_version/export_version.usd",
+   "ok": true,
+   "layers_changed": [
+    {
+     "layer": "scene_10_cbd_cross_intersection_diverse_obstacles/Collected_export_version/home/boleilab/Documents/sim2sim_test_scenes/scene_10/Collected_export_version/home/boleilab/Documents/sim2sim_test_scenes/scene_09/Collected_export_version/home/boleilab/Documents/sim2sim_test_scenes/scene_08/Collected_export_version/home/boleilab/Documents/sim2sim_test_scenes/scene_04/Collected_export_version/home/boleilab/Documents/sim2sim_test_scenes/scene_02/Collected_export_version/home/boleilab/Documents/Collected_UrbanCousin_Sim2SimEval/home/boleilab/Documents/VR_demo/home/boleilab/Documents/VR/Collected_export_version/home/boleilab/Documents/VR/vr_bigtown/Collected_export_version_latest/Downloads/colls/Collected_t/t.usd",
+     "attrs_fixed": 7,
+     "sha256": "e0f1d709ad18fae4882819a55e523938d5cb7ec78e9a47185e2152a4df5116a3",
+     "bytes": 747965
+    },
+    {
+     "layer": "scene_10_cbd_cross_intersection_diverse_obstacles/Collected_export_version/home/boleilab/Documents/sim2sim_test_scenes/scene_10/Collected_export_version/home/boleilab/Documents/sim2sim_test_scenes/scene_09/Collected_export_version/home/boleilab/Documents/sim2sim_test_scenes/scene_08/Collected_export_version/home/boleilab/Documents/sim2sim_test_scenes/scene_04/Collected_export_version/home/boleilab/Documents/sim2sim_test_scenes/scene_02/Collected_export_version/home/boleilab/Documents/Collected_UrbanCousin_Sim2SimEval/home/boleilab/Documents/VR_demo/home/boleilab/Documents/VR/Collected_export_version/home/boleilab/Documents/VR/vr_bigtown/Collected_export_version_latest/Downloads/colls/Collected_s/s.usd",
+     "attrs_fixed": 7,
+     "sha256": "d87ab8962c41f80fdd5744de5e92d00130709c071289cca1b51ea8a11f25cb2d",
+     "bytes": 453193
+    },
+    {
+     "layer": "scene_10_cbd_cross_intersection_diverse_obstacles/Collected_export_version/home/boleilab/Documents/sim2sim_test_scenes/scene_10/Collected_export_version/home/boleilab/Documents/sim2sim_test_scenes/Ground_materials/Big_Block.usd",
+     "attrs_fixed": 14,
+     "sha256": "53e0d4c5e8f250eb5d96d36a359ff862fb6d2ebdb691c75dad72759ffeb9fe57",
+     "bytes": 5892120
+    },
+    {
+     "layer": "scene_10_cbd_cross_intersection_diverse_obstacles/Collected_export_version/home/boleilab/Documents/sim2sim_test_scenes/Ground_materials/Big_Block.usd",
+     "attrs_fixed": 14,
+     "sha256": "53e0d4c5e8f250eb5d96d36a359ff862fb6d2ebdb691c75dad72759ffeb9fe57",
+     "bytes": 5892120
+    }
+   ],
+   "attrs_fixed": 42,
+   "error": null,
+   "layers_in_composition": 8,
+   "scalar_left": 0,
+   "seconds": 1.6
+  }
+ }
+}
