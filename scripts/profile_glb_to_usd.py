@@ -43,7 +43,7 @@ _T_PROC_START = time.perf_counter()
 
 parser = argparse.ArgumentParser(description="Profile UrbanVerse GLB -> USD conversion.")
 src = parser.add_mutually_exclusive_group(required=True)
-src.add_argument("--glb-root", type=str, help="Root of <category>/<uid>/<uid>.glb assets.")
+src.add_argument("--glb-root", type=str, help="Root of <category>/<uid>/<glb-name> assets.")
 src.add_argument("--tasks", type=str, help="Task JSON ({'tasks':[{glb,usd_dir,usd_name}]}).")
 parser.add_argument("--out-dir", type=str, default=None, help="USD output root (--glb-root mode).")
 parser.add_argument("--profile-dir", type=str, default="profiles", help="Where to write profiles.")
@@ -52,12 +52,21 @@ parser.add_argument("--skip-existing", action=argparse.BooleanOptionalAction, de
                     help="Resume: skip assets whose output USD already exists (default: on).")
 parser.add_argument("--shard", type=str, default=None, metavar="I/N",
                     help="Convert only shard I of N (1-based), for parallel workers.")
-parser.add_argument("--glb-name", type=str, default="{uid}.glb",
-                    help="GLB filename template inside each uid dir.")
+# Each uid dir holds two GLBs: the raw ``<uid>.glb`` (arbitrary units, origin
+# not on the ground - e.g. a 413-unit car, a building 36 m below its origin)
+# and ``adjusted_asset_scaled_bottomed.glb`` (metric, base at y=0). Only the
+# latter is placeable in a scene, so it is the default.
+parser.add_argument("--glb-name", type=str, default="adjusted_asset_scaled_bottomed.glb",
+                    help="GLB filename template inside each uid dir; '{uid}' expands to the dir name.")
 parser.add_argument("--collision-approximation", type=str, default="convexDecomposition",
                     choices=["convexDecomposition", "convexHull", "boundingCube",
                              "boundingSphere", "meshSimplification", "none"])
 parser.add_argument("--make-instanceable", action="store_true", default=False)
+# glTF is Y-up; Isaac Lab's MeshConverter drops that geometry unrotated into a
+# Z-up stage, so a plain conversion leaves every asset lying on its side.
+# Bake the +90 deg X rotation (Y->Z) so the USD stands upright at identity.
+parser.add_argument("--yup-to-zup", action=argparse.BooleanOptionalAction, default=True,
+                    help="Bake a +90deg X rotation so Y-up GLB geometry is Z-up (default: on).")
 parser.add_argument("--mass", type=float, default=None)
 parser.add_argument("--corpus-assets", type=int, default=102_445,
                     help="Full corpus size, used for the ETA extrapolation.")
@@ -245,6 +254,9 @@ def main() -> None:
     coll_kwargs = collision_kwargs(args_cli.collision_approximation)
     print(f"[profile] MeshConverterCfg collision API: "
           f"{'legacy (<=4.5)' if _LEGACY_COLLISION_API else 'mesh_collision_props (>=5)'}")
+    # Quaternion (w, x, y, z): +90 deg about X maps glTF's +Y (up) onto USD's +Z.
+    rotation = (0.7071068, 0.7071068, 0.0, 0.0) if args_cli.yup_to_zup else (1.0, 0.0, 0.0, 0.0)
+    print(f"[profile] Y-up -> Z-up rotation baked: {args_cli.yup_to_zup}")
 
     records = []
     t_batch = time.perf_counter()
@@ -278,6 +290,7 @@ def main() -> None:
                 usd_dir=usd_dir,
                 usd_file_name=usd_name,
                 make_instanceable=args_cli.make_instanceable,
+                rotation=rotation,
                 **coll_kwargs,
             )
             usd_path = MeshConverter(cfg).usd_path
@@ -337,6 +350,7 @@ def main() -> None:
         "python": platform.python_version(),
         "collision_approximation": args_cli.collision_approximation,
         "make_instanceable": args_cli.make_instanceable,
+        "yup_to_zup": args_cli.yup_to_zup,
         "headless": bool(getattr(args_cli, "headless", False)),
     }
 
