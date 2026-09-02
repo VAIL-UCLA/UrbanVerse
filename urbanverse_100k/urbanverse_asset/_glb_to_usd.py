@@ -72,6 +72,10 @@ if _missing:
 
 import argparse
 
+# Isaac Sim's shutdown can bypass interpreter cleanup, so don't let progress
+# output sit in a block buffer and get lost when stdout is redirected to a log.
+sys.stdout.reconfigure(line_buffering=True)
+
 parser = argparse.ArgumentParser(
     description="UrbanVerse GLB → USD converter (Isaac Lab).",
 )
