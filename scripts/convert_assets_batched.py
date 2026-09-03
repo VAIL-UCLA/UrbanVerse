@@ -22,6 +22,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -93,12 +94,17 @@ def validate_batch(usd_root: Path, uids: list[str]) -> tuple[list[str], dict[str
     return good, bad, warn
 
 
-def convert_batch(a, batch_dir: Path, uids: list[str]) -> Path:
-    """Run --convert-shards concurrent headless Isaac Sim workers over the batch."""
-    batch_dir.mkdir(parents=True, exist_ok=True)
-    uid_file = batch_dir / "uids.txt"
-    uid_file.write_text("\n".join(uids) + "\n")
-    prof_dir = batch_dir / "profile"
+_CONVERTING_RE = re.compile(r"^\s+\[\d+/\d+\] \S+ / ([0-9a-f]+)\s*$", re.M)
+
+
+def _last_uid_in_log(log: Path) -> str | None:
+    """uid of the asset a converter shard was working on when its log ends."""
+    hits = _CONVERTING_RE.findall(log.read_text(errors="replace"))
+    return hits[-1] if hits else None
+
+
+def _run_shards(a, batch_dir: Path, uid_file: Path, prof_dir: Path, tag: str) -> list[tuple[int, Path]]:
+    """Launch --convert-shards headless workers; return (returncode, log) per shard."""
     procs = []
     for i in range(1, a.convert_shards + 1):
         cmd = [PY, str(HERE / "profile_glb_to_usd.py"), "--glb-root", a.glb_root, "--flat",
@@ -106,12 +112,50 @@ def convert_batch(a, batch_dir: Path, uids: list[str]) -> Path:
                "--profile-dir", str(prof_dir), "--headless"]
         if a.convert_shards > 1:
             cmd += ["--shard", f"{i}/{a.convert_shards}"]
-        f = open(batch_dir / f"convert_{i}.log", "w")
-        procs.append((subprocess.Popen(cmd, stdout=f, stderr=subprocess.STDOUT), f))
-    for pr, f in procs:
+        log = batch_dir / f"convert{tag}_{i}.log"
+        f = open(log, "w")
+        procs.append((subprocess.Popen(cmd, stdout=f, stderr=subprocess.STDOUT), f, log))
+    out = []
+    for pr, f, log in procs:
         pr.wait()
         f.close()
-    return prof_dir
+        out.append((pr.returncode, log))
+    return out
+
+
+def convert_batch(a, batch_dir: Path, uids: list[str]) -> tuple[Path, dict[str, str]]:
+    """Run the batch through concurrent headless Isaac Sim workers.
+
+    A GLB that crashes Kit's converter (segfault, no Python exception) kills
+    its whole shard, so every crashed shard is retried without the asset it
+    died on, until all shards exit cleanly or the retry budget is spent.
+    Returns the profile dir and {uid: reason} for assets given up on.
+    """
+    batch_dir.mkdir(parents=True, exist_ok=True)
+    uid_file = batch_dir / "uids.txt"
+    uid_file.write_text("\n".join(uids) + "\n")
+    prof_dir = batch_dir / "profile"
+    crashed: dict[str, str] = {}
+    results = _run_shards(a, batch_dir, uid_file, prof_dir, "")
+    for attempt in range(1, a.crash_retries + 1):
+        bad = [(rc, log) for rc, log in results if rc != 0]
+        if not bad:
+            break
+        for rc, log in bad:
+            uid = _last_uid_in_log(log)
+            if uid is not None:
+                crashed[uid] = f"converter crashed (exit {rc}) on this asset"
+            print(f"[assets] shard {log.name} exited {rc} on {uid}; retry {attempt}/{a.crash_retries}",
+                  flush=True)
+        # --skip-existing makes the rerun pick up only what is still missing.
+        retry_file = batch_dir / f"uids_retry{attempt}.txt"
+        retry_file.write_text("\n".join(u for u in uids if u not in crashed) + "\n")
+        results = _run_shards(a, batch_dir, retry_file, prof_dir, f"_retry{attempt}")
+    else:
+        still = [log.name for rc, log in results if rc != 0]
+        if still:
+            print(f"[assets] shards still crashing after {a.crash_retries} retries: {still}", flush=True)
+    return prof_dir, crashed
 
 
 def upload_batch(a, batch_dir: Path) -> None:
@@ -145,6 +189,8 @@ def main() -> None:
     p.add_argument("--upload-workers", type=int, default=6)
     p.add_argument("--convert-shards", type=int, default=3,
                    help="Concurrent Isaac Sim converter processes per batch (CPU-bound; one GPU is enough).")
+    p.add_argument("--crash-retries", type=int, default=5,
+                   help="How many times to relaunch converter shards that crashed on a bad GLB")
     p.add_argument("--no-push", action="store_true")
     a = p.parse_args()
 
@@ -172,9 +218,11 @@ def main() -> None:
         batch_dir = work / f"batch_{batch_no:04d}"
         t0 = time.perf_counter()
         log(f"batch {batch_no}: converting {len(uids):,} assets -> {batch_dir}")
-        prof_dir = convert_batch(a, batch_dir, uids)
+        prof_dir, crashed = convert_batch(a, batch_dir, uids)
         t_conv = time.perf_counter() - t0
         good, bad, warn = validate_batch(batch_dir / "usd", uids)
+        bad.update(crashed)  # "no output" -> the real reason
+        good = [u for u in good if u not in crashed]
         if warn:
             state.setdefault("off_ground", {}).update(warn)
         for u, why in bad.items():

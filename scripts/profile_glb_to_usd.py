@@ -128,6 +128,19 @@ def collision_kwargs(approximation: str) -> dict:
     return {"mesh_collision_props": cls()}
 
 
+def glb_precheck(glb_path: str, glb_bytes: int) -> str | None:
+    """Return a reason string if *glb_path* is not a loadable glTF binary, else None."""
+    if glb_bytes == 0:
+        return "empty GLB (0 bytes)"
+    if glb_bytes < 20:  # 12-byte header + at least one chunk header
+        return f"truncated GLB ({glb_bytes} bytes)"
+    with open(glb_path, "rb") as f:
+        magic = f.read(4)
+    if magic != b"glTF":
+        return f"not a GLB (magic {magic!r})"
+    return None
+
+
 def dir_bytes(path: Path) -> int:
     """Total bytes of a converted asset directory (USD + textures/materials)."""
     if not path.exists():
@@ -301,6 +314,19 @@ def main() -> None:
             "glb": glb_path,
             "glb_mb": round(glb_bytes / 1e6, 3),
         }
+
+        # An empty or non-glTF file segfaults inside omni.kit.asset_converter
+        # (no Python exception), taking the whole shard down with it - refuse
+        # it here and record a normal failure instead.
+        bad = glb_precheck(glb_path, glb_bytes)
+        if bad is not None:
+            rec.update({
+                "ok": False, "usd": None, "seconds": 0.0,
+                "usd_mb": 0.0, "meshes": None, "triangles": None, "error": bad,
+            })
+            print(f"  SKIPPED: {bad}")
+            records.append(rec)
+            continue
 
         t0 = time.perf_counter()
         try:
