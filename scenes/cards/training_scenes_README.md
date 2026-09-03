@@ -48,8 +48,16 @@ repository: `scripts/upgrade_scene_for_isaacsim5.py`, `scripts/convert_scenes_si
 
 ## Layout
 
+One uncompressed tar per scene (375 files instead of ~300k loose ones):
+
 ```
-<scene>/                      e.g. Africa_Egypt_Cairo_walk_02_Cousin_01
+<scene>/scene.tar             e.g. Africa_Egypt_Cairo_walk_02_Cousin_01/scene.tar
+```
+
+extracts in place to
+
+```
+<scene>/
 ├── World0.usd                # open this
 ├── .collect.mapping.json
 └── SubUSDs/
@@ -57,6 +65,12 @@ repository: `scripts/upgrade_scene_for_isaacsim5.py`, `scripts/convert_scenes_si
     ├── materials/*.mdl
     └── textures/
 ```
+
+```bash
+mkdir -p Africa_Egypt_Cairo_walk_02_Cousin_01 && tar -xf Africa_Egypt_Cairo_walk_02_Cousin_01/scene.tar -C Africa_Egypt_Cairo_walk_02_Cousin_01
+```
+
+`previews/` holds one rendered still per source city walk (Isaac Sim 5.1, after the fix).
 
 Scene names are `<continent>_<country>_<city>_<walk|drive>_<seq>_Cousin_<k>`; cousins share a
 source video and differ in layout / assets.
