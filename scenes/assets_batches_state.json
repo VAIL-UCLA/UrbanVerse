@@ -227,7 +227,14 @@
   "eea2763894544966b76463b0923266c0",
   "fb6d1d75fdda4e52b2bcd5201f945302"
  ],
- "failed": {},
+ "failed": {
+  "10fe09a8f04d45a59495d207d4972aa1": "source GLB is 0 bytes in the UrbanVerse-100K corpus (public release only carries its renders)",
+  "1d4b27a68a4948eaaf676d7c98b236fa": "source GLB is 0 bytes in the UrbanVerse-100K corpus (public release only carries its renders)",
+  "78ac73b29be94be0a99801fa0612654d": "source GLB is 0 bytes in the UrbanVerse-100K corpus (public release only carries its renders)",
+  "95f11f5a06604c8b9fd44046ae52a9cc": "source GLB is 0 bytes in the UrbanVerse-100K corpus (public release only carries its renders)",
+  "d92aedacc6c94d6c9fd02bdbe6b20904": "source GLB is 0 bytes in the UrbanVerse-100K corpus (public release only carries its renders)",
+  "eceb31099fef4534a843091eb44a9bc2": "source GLB is 0 bytes in the UrbanVerse-100K corpus (public release only carries its renders)"
+ },
  "batches": [
   {
    "batch": 0,
