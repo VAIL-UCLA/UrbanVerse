@@ -58,7 +58,7 @@ Converting all UrbanVerse assets & scenarios to simulation-ready (Isaac Sim ≥ 
 
 | | HuggingFace | source | what changed |
 | --- | --- | --- | --- |
-| Training scenes | [UCLA-VAIL/UrbanVerse-Training-Scenes-Sim-Ready](https://huggingface.co/datasets/UCLA-VAIL/UrbanVerse-Training-Scenes-Sim-Ready) | all **375** generated scenes (66 city walks; the original [UrbanVerse-Training-Scenes](https://huggingface.co/datasets/UCLA-VAIL/UrbanVerse-Training-Scenes) release holds the first 107) | ground-material `texture_scale` re-authored as `float2` so roads/sidewalks/terrain render in Isaac Sim 5.x; upload in progress |
+| Training scenes | [UCLA-VAIL/UrbanVerse-Training-Scenes-Sim-Ready](https://huggingface.co/datasets/UCLA-VAIL/UrbanVerse-Training-Scenes-Sim-Ready) | all **375** generated scenes (66 city walks; the original [UrbanVerse-Training-Scenes](https://huggingface.co/datasets/UCLA-VAIL/UrbanVerse-Training-Scenes) release holds the first 107) | ground-material `texture_scale` re-authored as `float2` so roads/sidewalks/terrain render in Isaac Sim 5.x; one `scene.tar` per scene (1.0 TB total) plus one preview still per city walk |
 | CraftBench scenes | [UCLA-VAIL/UrbanVerse-CraftBench-Sim-Ready](https://huggingface.co/datasets/UCLA-VAIL/UrbanVerse-CraftBench-Sim-Ready) | [UrbanVerse-CraftBench](https://huggingface.co/datasets/Oatmealliu/UrbanVerse-CraftBench) (12) | same fix, same per-scene tar packaging |
 | Assets | [UCLA-VAIL/UrbanVerse-Assets-Sim-ready](https://huggingface.co/datasets/UCLA-VAIL/UrbanVerse-Assets-Sim-ready) | [UrbanVerse-100K](https://huggingface.co/datasets/Oatmealliu/UrbanVerse-100K) | GLB → USD: Z-up, metric, base on `z=0`, rigid body + convex-decomposition collision |
 
