@@ -14,10 +14,12 @@ pretty_name: UrbanVerse Training Scenes (Sim-Ready)
 
 # UrbanVerse-Training-Scenes-Sim-Ready
 
-The [UrbanVerse training scenes](https://huggingface.co/datasets/UCLA-VAIL/UrbanVerse-Training-Scenes)
-upgraded to load correctly in **NVIDIA Isaac Sim ≥ 5**. Same scenes, same layout, same
-`World0.usd` entry point - only the material layers that broke between Isaac Sim 4.5 and
-5.x were changed.
+All **375** UrbanVerse-generated training scenes (66 source city walks, 2-64 "cousin"
+layouts each), upgraded to load correctly in **NVIDIA Isaac Sim ≥ 5**. The original
+[UrbanVerse-Training-Scenes](https://huggingface.co/datasets/UCLA-VAIL/UrbanVerse-Training-Scenes)
+release contains the first 107 of these (byte-identical apart from the fix below); this
+repository is the complete set. Same layout, same `World0.usd` entry point - only the
+material layers that broke between Isaac Sim 4.5 and 5.x were changed.
 
 Project: [UrbanVerse: Scaling Urban Simulation by Watching City-Tour Videos](https://urbanverseproject.github.io/) (ICLR 2026) ·
 Code: [VAIL-UCLA/UrbanVerse](https://github.com/VAIL-UCLA/UrbanVerse)

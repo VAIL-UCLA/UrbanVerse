@@ -56,6 +56,11 @@ parser.add_argument("--shard", type=str, default=None, metavar="I/N",
 # not on the ground - e.g. a 413-unit car, a building 36 m below its origin)
 # and ``adjusted_asset_scaled_bottomed.glb`` (metric, base at y=0). Only the
 # latter is placeable in a scene, so it is the default.
+parser.add_argument("--flat", action="store_true",
+                    help="--glb-root holds std_<uid>.glb files directly (UrbanVerse-100K dump) "
+                         "instead of <category>/<uid>/ dirs.")
+parser.add_argument("--uid-list", type=str, default=None,
+                    help="With --flat: text file of uids to convert (one per line), in order.")
 parser.add_argument("--glb-name", type=str, default="adjusted_asset_scaled_bottomed.glb",
                     help="GLB filename template inside each uid dir; '{uid}' expands to the dir name.")
 parser.add_argument("--collision-approximation", type=str, default="convexDecomposition",
@@ -175,6 +180,24 @@ def build_tasks():
     out_root = Path(args_cli.out_dir).resolve()
 
     tasks = []
+    if args_cli.flat:
+        # UrbanVerse-100K "standardised" dump: one std_<uid>.glb per asset, no
+        # category dirs. Optional --uid-list restricts (and orders) the batch.
+        uids = None
+        if args_cli.uid_list:
+            uids = [u.strip() for u in Path(args_cli.uid_list).read_text().split() if u.strip()]
+        names = uids if uids is not None else sorted(
+            p.stem[4:] for p in root.iterdir() if p.suffix == ".glb" and p.stem.startswith("std_"))
+        for uid in names:
+            glb = root / f"std_{uid}.glb"
+            if not glb.exists():
+                continue
+            tasks.append({
+                "uid": uid, "category": "flat", "glb": str(glb),
+                "usd_dir": str(out_root / f"std_{uid}"), "usd_name": f"std_{uid}.usd",
+            })
+        return tasks
+
     for cat_dir in sorted(p for p in root.iterdir() if p.is_dir()):
         for uid_dir in sorted(p for p in cat_dir.iterdir() if p.is_dir()):
             uid = uid_dir.name
