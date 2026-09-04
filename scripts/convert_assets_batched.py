@@ -238,14 +238,14 @@ def upload_batch(a, batch_dir: Path) -> None:
     for attempt in range(1, a.upload_restarts + 1):
         pr = subprocess.Popen([PY, "-c", _UPLOAD_SNIPPET, a.repo, str(batch_dir / "hub"), str(a.upload_workers)],
                               env=env, stdout=sys.stdout, stderr=subprocess.STDOUT)
-        last_change, last_seen = _newest_mtime(batch_dir), time.time()
+        last_change, last_seen = _newest_mtime(batch_dir / "hub"), time.time()
         while True:
             try:
                 rc = pr.wait(timeout=60)
                 break
             except subprocess.TimeoutExpired:
                 pass
-            m = _newest_mtime(batch_dir)
+            m = _newest_mtime(batch_dir / "hub")
             if m > last_change:
                 last_change, last_seen = m, time.time()
             elif time.time() - last_seen > a.upload_stall_min * 60:
