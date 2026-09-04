@@ -68,24 +68,51 @@ after the axis swap (extents equal to 1e-3, base at z = 0).
 
 ## Layout
 
+One tar per asset, bucketed by the first two hex characters of its id (256 folders,
+~400 files each):
+
 ```
 usd/
-└── std_<uid>/
-    ├── std_<uid>.usd      # reference this
-    ├── config.yaml        # MeshConverterCfg used for the conversion
-    └── textures/
+└── <uid[:2]>/
+    └── std_<uid>.tar
+        └── std_<uid>/
+            ├── std_<uid>.usd      # reference this
+            ├── config.yaml        # MeshConverterCfg used for the conversion
+            └── textures/
 ```
 
 `<uid>` is the UrbanVerse-100K asset id, so annotations from the
 [`urbanverse-asset`](https://github.com/VAIL-UCLA/UrbanVerse/tree/main/urbanverse_100k)
-toolkit apply directly.
+toolkit apply directly. Extracting every tar into one directory gives a flat
+`std_<uid>/` folder per asset.
 
-## Usage (Isaac Lab)
+## Usage
+
+Fetch and unpack one asset:
+
+```python
+import tarfile
+from huggingface_hub import hf_hub_download
+
+uid = "0011e400ad1042cfb6a990376240b091"
+tar = hf_hub_download("UCLA-VAIL/UrbanVerse-Assets-Sim-ready", f"usd/{uid[:2]}/std_{uid}.tar",
+                      repo_type="dataset")
+tarfile.open(tar).extractall("assets")          # -> assets/std_<uid>/std_<uid>.usd
+```
+
+Everything (~1.7 TB):
+
+```bash
+hf download UCLA-VAIL/UrbanVerse-Assets-Sim-ready --repo-type dataset --local-dir assets_tar
+find assets_tar/usd -name '*.tar' -print0 | xargs -0 -n1 -P8 tar -C assets -xf
+```
+
+Then, in Isaac Lab:
 
 ```python
 import isaaclab.sim as sim_utils
 
-cfg = sim_utils.UsdFileCfg(usd_path="/path/to/usd/std_<uid>/std_<uid>.usd")
+cfg = sim_utils.UsdFileCfg(usd_path="assets/std_<uid>/std_<uid>.usd")
 cfg.func("/World/asset", cfg, translation=(0.0, 0.0, 0.0))
 ```
 

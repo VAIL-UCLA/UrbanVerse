@@ -4,9 +4,15 @@
 The corpus is ~1 TB of GLB and the USD output is ~1.8x that, so it never exists
 locally in full. This loop takes the next --batch-size unconverted uids, converts
 them with scripts/profile_glb_to_usd.py (Isaac Lab MeshConverter, headless),
-validates every stage, uploads the batch to the HF dataset, records the uids as
-done, deletes the local batch, bumps the README progress bar and pushes.
-Conversion of batch k+1 overlaps the upload of batch k.
+validates every stage, packs each one as ``usd/<uid[:2]>/std_<uid>.tar`` (the
+stage folder: .usd, textures/, config.yaml), uploads the batch to the HF dataset,
+records the uids as done, deletes the local batch, bumps the README progress bar
+and pushes. Conversion of batch k+1 overlaps the upload of batch k.
+
+One tar per asset in 256 buckets keeps the repo at ~102k files / ~400 per folder;
+the first attempt with loose stage folders (12 files each, one 35k-entry folder)
+ran into HF's 100k-files / 10k-per-folder limits: commits timed out (504) and
+listing the repo took minutes.
 
     python scripts/convert_assets_batched.py \
         --glb-root "/media/hollis/Extreme SSD1/mnt_new/UrbanVerseAll/assets_std_glb_flat" \
@@ -51,15 +57,54 @@ def save_state(path: Path, state: dict) -> None:
     tmp.replace(path)
 
 
+def bucket(uid: str) -> str:
+    return uid[:2]
+
+
+def tar_path_in_repo(uid: str) -> str:
+    return f"usd/{bucket(uid)}/std_{uid}.tar"
+
+
 def already_on_hub(repo: str) -> set[str]:
+    """uids with a tar on the hub (safety net on top of the state file)."""
     from huggingface_hub import HfApi
-    info = HfApi().dataset_info(repo)
     uids = set()
-    for f in info.siblings:
-        parts = f.rfilename.split("/")
-        if len(parts) == 3 and parts[0] == "usd" and parts[2].endswith(".usd") and parts[1].startswith("std_"):
-            uids.add(parts[1][4:])
+    try:
+        for e in HfApi().list_repo_tree(repo, path_in_repo="usd", repo_type="dataset", recursive=True):
+            parts = e.path.split("/")
+            if len(parts) == 3 and parts[2].startswith("std_") and parts[2].endswith(".tar"):
+                uids.add(parts[2][4:-4])
+    except Exception as e:  # noqa: BLE001 - e.g. no usd/ folder yet
+        log(f"hub scan skipped: {type(e).__name__}: {str(e)[:120]}")
     return uids
+
+
+def pack_batch(batch_dir: Path, uids: list[str], workers: int) -> dict[str, str]:
+    """tar each validated stage folder into hub/usd/<bucket>/std_<uid>.tar and drop the folder.
+
+    Returns {uid: reason} for stages that could not be packed."""
+    from concurrent.futures import ThreadPoolExecutor
+    src_root = batch_dir / "usd"
+    hub_root = batch_dir / "hub" / "usd"
+
+    def one(uid: str) -> tuple[str, str | None]:
+        name = f"std_{uid}"
+        out = hub_root / bucket(uid) / f"{name}.tar"
+        out.parent.mkdir(parents=True, exist_ok=True)
+        r = subprocess.run(["tar", "-C", str(src_root), "--exclude=.asset_hash", "-cf", str(out), name],
+                           capture_output=True, text=True)
+        if r.returncode != 0 or not out.is_file() or out.stat().st_size == 0:
+            out.unlink(missing_ok=True)
+            return uid, f"tar failed: {r.stderr.strip()[:120]}"
+        shutil.rmtree(src_root / name, ignore_errors=True)
+        return uid, None
+
+    bad = {}
+    with ThreadPoolExecutor(max_workers=workers) as ex:
+        for uid, why in ex.map(one, uids):
+            if why:
+                bad[uid] = why
+    return bad
 
 
 def validate_batch(usd_root: Path, uids: list[str]) -> tuple[list[str], dict[str, str], dict[str, float]]:
@@ -158,11 +203,64 @@ def convert_batch(a, batch_dir: Path, uids: list[str]) -> tuple[Path, dict[str, 
     return prof_dir, crashed
 
 
+_UPLOAD_SNIPPET = """
+import sys
+from huggingface_hub import HfApi
+repo, folder, workers = sys.argv[1], sys.argv[2], int(sys.argv[3])
+HfApi().upload_large_folder(repo_id=repo, repo_type="dataset", folder_path=folder,
+                            allow_patterns=["usd/**"], num_workers=workers, print_report=False)
+"""
+
+
+def _newest_mtime(root: Path) -> float:
+    """Latest mtime under upload_large_folder's .cache dir - it touches a
+    metadata file for every hash/upload/commit step, so this is a liveness signal."""
+    newest = 0.0
+    cache = root / ".cache" / "huggingface"
+    if cache.exists():
+        for f in cache.rglob("*.metadata"):
+            try:
+                newest = max(newest, f.stat().st_mtime)
+            except OSError:
+                pass
+    return newest
+
+
 def upload_batch(a, batch_dir: Path) -> None:
-    from huggingface_hub import HfApi
-    HfApi().upload_large_folder(repo_id=a.repo, repo_type="dataset", folder_path=str(batch_dir),
-                                allow_patterns=["usd/**"], num_workers=a.upload_workers,
-                                print_report=False)
+    """upload_large_folder in a child process, restarted if it stops making progress.
+
+    The in-process call hung for hours once (all workers parked on a lock after the
+    last LFS upload, commits pending). upload_large_folder is resumable from its
+    .cache metadata, so a stalled run is killed and relaunched, which picks up at
+    the pending commits.
+    """
+    env = dict(os.environ, HF_HUB_DISABLE_PROGRESS_BARS="1", HF_HUB_DISABLE_XET="1")
+    for attempt in range(1, a.upload_restarts + 1):
+        pr = subprocess.Popen([PY, "-c", _UPLOAD_SNIPPET, a.repo, str(batch_dir / "hub"), str(a.upload_workers)],
+                              env=env, stdout=sys.stdout, stderr=subprocess.STDOUT)
+        last_change, last_seen = _newest_mtime(batch_dir), time.time()
+        while True:
+            try:
+                rc = pr.wait(timeout=60)
+                break
+            except subprocess.TimeoutExpired:
+                pass
+            m = _newest_mtime(batch_dir)
+            if m > last_change:
+                last_change, last_seen = m, time.time()
+            elif time.time() - last_seen > a.upload_stall_min * 60:
+                log(f"upload of {batch_dir.name} made no progress for {a.upload_stall_min} min "
+                    f"- killing and resuming (attempt {attempt}/{a.upload_restarts})")
+                pr.kill()
+                pr.wait()
+                rc = None
+                break
+        if rc == 0:
+            return
+        if rc is not None:
+            log(f"upload of {batch_dir.name} exited {rc} - resuming (attempt {attempt}/{a.upload_restarts})")
+            time.sleep(60)
+    raise RuntimeError(f"upload of {batch_dir.name} did not finish after {a.upload_restarts} attempts")
 
 
 def bump_progress(total_done: int, push: bool) -> None:
@@ -189,6 +287,10 @@ def main() -> None:
     p.add_argument("--upload-workers", type=int, default=6)
     p.add_argument("--convert-shards", type=int, default=3,
                    help="Concurrent Isaac Sim converter processes per batch (CPU-bound; one GPU is enough).")
+    p.add_argument("--pack-workers", type=int, default=4, help="Parallel tar processes per batch")
+    p.add_argument("--upload-stall-min", type=int, default=20,
+                   help="Kill and resume the upload if its .cache metadata stops changing for this long")
+    p.add_argument("--upload-restarts", type=int, default=30)
     p.add_argument("--crash-retries", type=int, default=5,
                    help="How many times to relaunch converter shards that crashed on a bad GLB")
     p.add_argument("--no-push", action="store_true")
@@ -216,19 +318,29 @@ def main() -> None:
     while todo and (not a.max_batches or batch_no - len(state["batches"]) < a.max_batches):
         uids = todo[: a.batch_size]
         batch_dir = work / f"batch_{batch_no:04d}"
+        # a restart after packing finds tars but no stage folders: keep those as done
+        packed = [u for u in uids if (batch_dir / "hub" / tar_path_in_repo(u)).is_file()]
+        pending = [u for u in uids if u not in set(packed)]
         t0 = time.perf_counter()
-        log(f"batch {batch_no}: converting {len(uids):,} assets -> {batch_dir}")
-        prof_dir, crashed = convert_batch(a, batch_dir, uids)
+        log(f"batch {batch_no}: converting {len(pending):,} assets ({len(packed):,} already packed) -> {batch_dir}")
+        if pending:
+            prof_dir, crashed = convert_batch(a, batch_dir, pending)
+        else:
+            prof_dir, crashed = batch_dir / "profile", {}
         t_conv = time.perf_counter() - t0
-        good, bad, warn = validate_batch(batch_dir / "usd", uids)
+        good, bad, warn = validate_batch(batch_dir / "usd", pending)
         bad.update(crashed)  # "no output" -> the real reason
         good = [u for u in good if u not in crashed]
         if warn:
             state.setdefault("off_ground", {}).update(warn)
         for u, why in bad.items():
             shutil.rmtree(batch_dir / "usd" / f"std_{u}", ignore_errors=True)
+        t2 = time.perf_counter()
+        pack_bad = pack_batch(batch_dir, good, a.pack_workers)
+        bad.update(pack_bad)
+        good = packed + [u for u in good if u not in pack_bad]
         log(f"batch {batch_no}: {len(good):,} ok, {len(bad):,} bad, {len(warn):,} off-ground, "
-            f"convert {t_conv / 60:.1f} min")
+            f"convert {t_conv / 60:.1f} min, pack {(time.perf_counter() - t2) / 60:.1f} min")
         summary, out_mb, secs, n_ok = {}, 0.0, 0.0, 0
         for pj in sorted(prof_dir.glob("profile_*.json")):
             sm = json.loads(pj.read_text()).get("summary", {})
