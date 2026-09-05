@@ -47,7 +47,7 @@
 Converting all UrbanVerse assets & scenarios to simulation-ready (Isaac Sim ≥ 5) format, in batches.
 
 <!-- sim-ready-progress:start -->
-**Assets:** `███░░░░░░░░░░░░░░░░░░░░░░` 11,000 / 102,445 (10.7%)
+**Assets:** `████░░░░░░░░░░░░░░░░░░░░░` 16,000 / 102,445 (15.6%)
 
 **Scenarios:** `█████████████████████████` 387 / 387 (100.0%)
 <!-- sim-ready-progress:end -->
