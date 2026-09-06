@@ -2339,6 +2339,7 @@
   "05848afc28ec4390bd2eb2b800da6816",
   "05851294a6eb4089a18cdd459833d400",
   "05859b0ed5e546fe986382c895d01ba2",
+  "05860a1632b9404d826c1a3860286511",
   "058689a843a7487c8ca267d1c38fdada",
   "0587a57b14c1488eafca8db7d78df2b3",
   "05889910a32f43fe93c642eee6cef710",
@@ -102444,8 +102445,7 @@
   "78ac73b29be94be0a99801fa0612654d": "source GLB is 0 bytes in the UrbanVerse-100K corpus (public release only carries its renders)",
   "95f11f5a06604c8b9fd44046ae52a9cc": "source GLB is 0 bytes in the UrbanVerse-100K corpus (public release only carries its renders)",
   "d92aedacc6c94d6c9fd02bdbe6b20904": "source GLB is 0 bytes in the UrbanVerse-100K corpus (public release only carries its renders)",
-  "eceb31099fef4534a843091eb44a9bc2": "source GLB is 0 bytes in the UrbanVerse-100K corpus (public release only carries its renders)",
-  "05860a1632b9404d826c1a3860286511": "no RigidBodyAPI"
+  "eceb31099fef4534a843091eb44a9bc2": "source GLB is 0 bytes in the UrbanVerse-100K corpus (public release only carries its renders)"
  },
  "batches": [
   {
@@ -102657,6 +102657,13 @@
    "mean_s_per_asset": 0.792,
    "output_mb": 9744.0,
    "finished": "2026-09-05 22:33:39"
+  },
+  {
+   "batch": "retry",
+   "ok": 1,
+   "bad": 0,
+   "note": "05860a1632b9404d826c1a3860286511: first conversion produced a stage without RigidBodyAPI; clean on retry",
+   "finished": "2026-09-05 22:35:34"
   }
  ],
  "off_ground": {

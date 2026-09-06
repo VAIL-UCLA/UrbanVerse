@@ -68,12 +68,12 @@ after the axis swap (extents equal to 1e-3, base at z = 0).
 
 ## Layout
 
-One tar per asset, bucketed by the first two hex characters of its id (256 folders,
-~400 files each):
+One tar per asset, bucketed by the first two characters of its id, lowercased
+(329 folders, at most ~460 files each):
 
 ```
 usd/
-└── <uid[:2]>/
+└── <uid[:2].lower()>/
     └── std_<uid>.tar
         └── std_<uid>/
             ├── std_<uid>.usd      # reference this
@@ -83,8 +83,9 @@ usd/
 
 `<uid>` is the UrbanVerse-100K asset id, so annotations from the
 [`urbanverse-asset`](https://github.com/VAIL-UCLA/UrbanVerse/tree/main/urbanverse_100k)
-toolkit apply directly. Extracting every tar into one directory gives a flat
-`std_<uid>/` folder per asset.
+toolkit apply directly. Most ids are 32-character hex; 85 are 26-27-character
+mixed-case ids, hence the lowercasing. Extracting every tar into one directory gives
+a flat `std_<uid>/` folder per asset.
 
 ## Usage
 
@@ -95,7 +96,7 @@ import tarfile
 from huggingface_hub import hf_hub_download
 
 uid = "0011e400ad1042cfb6a990376240b091"
-tar = hf_hub_download("UCLA-VAIL/UrbanVerse-Assets-Sim-ready", f"usd/{uid[:2]}/std_{uid}.tar",
+tar = hf_hub_download("UCLA-VAIL/UrbanVerse-Assets-Sim-ready", f"usd/{uid[:2].lower()}/std_{uid}.tar",
                       repo_type="dataset")
 tarfile.open(tar).extractall("assets")          # -> assets/std_<uid>/std_<uid>.usd
 ```
@@ -116,12 +117,17 @@ cfg = sim_utils.UsdFileCfg(usd_path="assets/std_<uid>/std_<uid>.usd")
 cfg.func("/World/asset", cfg, translation=(0.0, 0.0, 0.0))
 ```
 
-## Status
+## Coverage
 
-This repository is filled in batches as the full corpus (102,445 assets) is converted;
-see the [live progress](https://github.com/VAIL-UCLA/UrbanVerse#sim-ready-conversion-progress)
-in the project README. Conversion tooling: `scripts/profile_glb_to_usd.py` and
-`urbanverse_100k/urbanverse_asset/_glb_to_usd.py` in the code repository.
+**102,438 of the 102,444 assets** in the UrbanVerse-100K GLB corpus (1.78 TB of tars).
+The remaining 6 (`10fe09a8…`, `1d4b27a6…`, `78ac73b2…`, `95f11f5a…`, `d92aedac…`,
+`eceb3109…`) are 0-byte GLB files upstream — the public UrbanVerse-100K release only
+carries their renders — so they could not be converted. Per-batch records, the list of
+those ids and the ~2,300 assets whose source GLB is not ground-aligned (base above or
+below `z = 0`, converted faithfully) are in
+[`scenes/assets_batches_state.json`](https://github.com/VAIL-UCLA/UrbanVerse/blob/main/scenes/assets_batches_state.json).
+Conversion tooling: `scripts/profile_glb_to_usd.py`, `scripts/convert_assets_batched.py`
+and `urbanverse_100k/urbanverse_asset/_glb_to_usd.py` in the code repository.
 
 ## Citation
 

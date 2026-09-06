@@ -4,7 +4,7 @@
 The corpus is ~1 TB of GLB and the USD output is ~1.8x that, so it never exists
 locally in full. This loop takes the next --batch-size unconverted uids, converts
 them with scripts/profile_glb_to_usd.py (Isaac Lab MeshConverter, headless),
-validates every stage, packs each one as ``usd/<uid[:2]>/std_<uid>.tar`` (the
+validates every stage, packs each one as ``usd/<uid[:2].lower()>/std_<uid>.tar`` (the
 stage folder: .usd, textures/, config.yaml), uploads the batch to the HF dataset,
 records the uids as done, deletes the local batch, bumps the README progress bar
 and pushes. Conversion of batch k+1 overlaps the upload of batch k.
@@ -58,7 +58,12 @@ def save_state(path: Path, state: dict) -> None:
 
 
 def bucket(uid: str) -> str:
-    return uid[:2]
+    """usd/<bucket>/ folder for a uid: its first two characters, lowercased.
+
+    Most ids are 32-char hex, but 85 are 26-27-char base62 (mixed case). Lowercasing
+    keeps the layout stable on case-insensitive filesystems (the exFAT work drive,
+    macOS/Windows checkouts), where usd/7c and usd/7C would be the same folder."""
+    return uid[:2].lower()
 
 
 def tar_path_in_repo(uid: str) -> str:
