@@ -16,8 +16,9 @@ finds them instead of fetching the original (pre-sim-ready) release::
 Each ``Collected_export_version.tar`` is deleted once extracted (``--keep-tar``
 keeps it), and every layer the sim-ready conversion changed is checked against
 its sha256 in ``scenes/craftbench_simready_manifest.json``. Re-running skips
-finished scenes, so a killed download just resumes; on a complete tree it only
-re-verifies.
+finished scenes, so a killed download just resumes; a scene extracted from an
+earlier release (a changed layer no longer matches the manifest) is fetched and
+extracted again. On a complete, current tree it only re-verifies.
 """
 import argparse
 import hashlib
@@ -56,6 +57,7 @@ def extract(scene_dir: Path) -> None:
     shutil.rmtree(tmp, ignore_errors=True)
     with tarfile.open(scene_dir / TAR) as tf:
         tf.extractall(tmp, filter="data")
+    shutil.rmtree(scene_dir / "Collected_export_version", ignore_errors=True)  # an earlier release's copy
     (tmp / "Collected_export_version").rename(scene_dir / "Collected_export_version")
     tmp.rmdir()
 
@@ -98,7 +100,13 @@ def main() -> None:
     scenes = sorted(scenes) or sorted(files)
 
     bench = Path(a.root).expanduser().resolve() / "CraftBench"
-    todo = [s for s in scenes if not (bench / s / USD).is_file()]
+    manifest = json.loads(Path(a.manifest).read_text())["scenes"] if a.manifest else None
+    stale = [s for s in scenes if manifest and (bench / s / USD).is_file() and any(
+        not (bench / e["layer"]).is_file() or sha256(bench / e["layer"]) != e["sha256"]
+        for e in manifest.get(s, {}).get("layers_changed", []))]
+    for s in stale:
+        print(f"[download] {s}: extracted from an earlier release, fetching it again")
+    todo = [s for s in scenes if not (bench / s / USD).is_file() or s in stale]
     # Tars only for scenes not yet extracted, else a re-run would pull them all again.
     wanted = [(s, n) for s in scenes for n in files[s] if n != TAR or s in todo]
     fetch = sum(files[s][n] for s, n in wanted
@@ -136,7 +144,6 @@ def main() -> None:
         if not a.keep_tar:  # right away, so peak disk is one tar over the final size (as budgeted above)
             (bench / s / TAR).unlink(missing_ok=True)
 
-    manifest = json.loads(Path(a.manifest).read_text())["scenes"] if a.manifest else None
     n_bad = 0
     for s in scenes:
         d = bench / s

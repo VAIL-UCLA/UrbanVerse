@@ -24,13 +24,26 @@
      "attrs_fixed": 7,
      "sha256": "d87ab8962c41f80fdd5744de5e92d00130709c071289cca1b51ea8a11f25cb2d",
      "bytes": 453193
+    },
+    {
+     "layer": "scene_03_residential_street_dual_sidewalks_clean/Collected_export_version/export_version.usd",
+     "prims_renamed": 1,
+     "sha256": "06ac8b64e4e3f70cb6ca137c1e8e4a7c29bb469a534d53da282fced2b16a713f",
+     "bytes": 1299803979
     }
    ],
    "attrs_fixed": 14,
    "error": null,
    "layers_in_composition": 5,
    "scalar_left": 0,
-   "seconds": 1.1
+   "seconds": 1.1,
+   "overrides_renamed": [
+    {
+     "layer": "scene_03_residential_street_dual_sidewalks_clean/Collected_export_version/export_version.usd",
+     "from": "/World/building_d8593d2bd7044e5f86725593eae36262/Betongv______gg001_Inne_0",
+     "to": "Betongv__gg001_Inne_0"
+    }
+   ]
   },
   "scene_01_residential_street_dual_sidewalks_dense_bollards_trash_bags": {
    "scene": "scene_01_residential_street_dual_sidewalks_dense_bollards_trash_bags",
@@ -240,13 +253,41 @@
      "attrs_fixed": 7,
      "sha256": "d87ab8962c41f80fdd5744de5e92d00130709c071289cca1b51ea8a11f25cb2d",
      "bytes": 453193
+    },
+    {
+     "layer": "scene_11_urban_park_dogs_sports_area/Collected_export_version/export_version.usd",
+     "prims_renamed": 4,
+     "sha256": "6d90864b2fcb86e5343c6ee296770d95e15dcbc085f7b5beafccb1c055e1644a",
+     "bytes": 204287078
     }
    ],
    "attrs_fixed": 14,
    "error": null,
    "layers_in_composition": 6,
    "scalar_left": 0,
-   "seconds": 1.2
+   "seconds": 1.2,
+   "overrides_renamed": [
+    {
+     "layer": "scene_11_urban_park_dogs_sports_area/Collected_export_version/export_version.usd",
+     "from": "/World/Group_03/amenity_facilities_amenity_bench_84426d6537ac4cdc837d602ccabe7036/P______s_Material_0",
+     "to": "P__s_Material_0"
+    },
+    {
+     "layer": "scene_11_urban_park_dogs_sports_area/Collected_export_version/export_version.usd",
+     "from": "/World/Group_04/amenity_facilities_amenity_bench_84426d6537ac4cdc837d602ccabe7036/P______s_Material_0",
+     "to": "P__s_Material_0"
+    },
+    {
+     "layer": "scene_11_urban_park_dogs_sports_area/Collected_export_version/export_version.usd",
+     "from": "/World/Group_05/amenity_facilities_amenity_bench_84426d6537ac4cdc837d602ccabe7036/P______s_Material_0",
+     "to": "P__s_Material_0"
+    },
+    {
+     "layer": "scene_11_urban_park_dogs_sports_area/Collected_export_version/export_version.usd",
+     "from": "/World/Group_06/amenity_facilities_amenity_bench_84426d6537ac4cdc837d602ccabe7036/P______s_Material_0",
+     "to": "P__s_Material_0"
+    }
+   ]
   },
   "scene_09_cbd_t_intersection_construction_sites": {
    "scene": "scene_09_cbd_t_intersection_construction_sites",
@@ -270,13 +311,26 @@
      "attrs_fixed": 14,
      "sha256": "53e0d4c5e8f250eb5d96d36a359ff862fb6d2ebdb691c75dad72759ffeb9fe57",
      "bytes": 5892120
+    },
+    {
+     "layer": "scene_09_cbd_t_intersection_construction_sites/Collected_export_version/export_version.usd",
+     "prims_renamed": 1,
+     "sha256": "8246f005f4a1b21e03b38a8d6f7f69d48c5c0eb47eb41653a7a148c9ccd0378c",
+     "bytes": 395031337
     }
    ],
    "attrs_fixed": 28,
    "error": null,
    "layers_in_composition": 6,
    "scalar_left": 0,
-   "seconds": 1.5
+   "seconds": 1.5,
+   "overrides_renamed": [
+    {
+     "layer": "scene_09_cbd_t_intersection_construction_sites/Collected_export_version/export_version.usd",
+     "from": "/World/amenity_facilities_amenity_bench_84426d6537ac4cdc837d602ccabe7036/P______s_Material_0",
+     "to": "P__s_Material_0"
+    }
+   ]
   },
   "scene_10_cbd_cross_intersection_diverse_obstacles": {
    "scene": "scene_10_cbd_cross_intersection_diverse_obstacles",

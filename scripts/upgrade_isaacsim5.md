@@ -211,6 +211,31 @@ see in Isaac Sim after the patch is unrelated to this tool.
 
 ---
 
+## Overrides into `.glb` nodes with non-ASCII names
+
+A second, independent 4.5 &rarr; 5.x difference. Kit's glTF importer names each
+node's prim after the node, turning invalid characters into `_`: one per UTF-8
+byte in Isaac Sim 4.5, one per character in 5.x. For a non-ASCII name such as
+the CraftBench bench node `P��s_Material_0` (two U+FFFD), 4.5 makes
+`P______s_Material_0` and 5.x makes `P__s_Material_0`. A scene authored in 4.5
+overrides the node by its 4.5 name, which matches nothing in 5.x, so the node
+silently loses the placement, collision or `active = false` the scene gave it.
+
+```bash
+# list, then rename such overrides to the 5.x names (backs up changed layers,
+# records their sha256 in the manifest)
+python scripts/fix_glb_override_names.py --root "/.../CraftBench" \
+    --backup-dir "/.../CraftBench.orig-layers" \
+    --manifest scenes/craftbench_simready_manifest.json --dry-run
+```
+
+`sanity_check_static.py` flags such overrides without Isaac Sim;
+`sanity_check_sim.py` (its `overrides` check) confirms in Isaac Sim that every
+scene override into a `.glb` lands. In CraftBench this was 6 overrides in
+scenes 03, 09 and 11, fixed in the sim-ready release on 2026-09-25.
+
+---
+
 ## File layout
 
 ```
@@ -218,5 +243,6 @@ scripts/
 ├── upgrade_scene_for_isaacsim5.py    # the Python patcher
 ├── upgrade_scene_for_isaacsim5.sh    # single-scene wrapper (interactive)
 ├── upgrade_scenes_batch.sh           # batch wrapper (non-interactive)
+├── fix_glb_override_names.py         # overrides into non-ASCII .glb nodes
 └── upgrade_isaacsim5.md              # this file
 ```

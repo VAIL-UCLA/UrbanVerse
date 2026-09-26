@@ -77,6 +77,15 @@ Every such attribute was re-authored as `float2` with the **MDL parameter's own 
 in 5.x. Attributes that were already a valid `float2` were left untouched; geometry, layout,
 assets, textures and physics are unchanged.
 
+**Update, Sep 25 2026 - scenes 03, 09 and 11.** Two glTF models have non-ASCII node names
+(a bench's `P��s_Material_0`, a building's `Betongv��gg001_Inne_0`). Kit's glTF importer turns
+each invalid character into `_`: one per byte in Isaac Sim 4.5, one per character in 5.x. The
+scenes' overrides for those nodes still used the 4.5 names (`P______s_Material_0`), so in 5.x
+they matched nothing: 5 benches (1 in scene 09, 4 in scene 11) sat off their spots without
+collision, and a building part that scene 03 switches off was back on. The 6 overrides now use
+the 5.x names (`P__s_Material_0`, `Betongv__gg001_Inne_0`); nothing else changed. If you
+downloaded scenes 03, 09 or 11 before this date, delete them and download them again.
+
 Tooling and per-scene provenance (every changed layer with its sha256):
 [`scripts/upgrade_isaacsim5.md`](https://github.com/VAIL-UCLA/UrbanVerse/blob/main/scripts/upgrade_isaacsim5.md),
 [`scenes/craftbench_simready_manifest.json`](https://github.com/VAIL-UCLA/UrbanVerse/blob/main/scenes/craftbench_simready_manifest.json).

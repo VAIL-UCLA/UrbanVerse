@@ -11,10 +11,11 @@ Per scene (``<scene>/<pattern>``, CraftBench's root layer by default):
             scene dir. Bare ``*.mdl`` names (OmniPBR.mdl, ...) are Kit's built-in MDL
             library and resolve at runtime. A missing texture only WARNs, and is INFO when
             every prim using it is invisible or inactive (e.g. the unused Grey_Studio sky).
-  glb       every .glb has a glTF 2.0 header whose length matches the file size. WARN when
-            the scene overrides into a model with non-ASCII glTF node names: Isaac Sim 5
-            names those prims differently from 4.5, so the overrides can miss (see
-            sanity_check_sim.py's 'overrides' check).
+  glb       every .glb has a glTF 2.0 header whose length matches the file size, and no
+            scene override targets a .glb node by its Isaac Sim 4.5 name where Isaac Sim 5
+            names it differently (non-ASCII glTF names): in 5 that override misses and the
+            node loses its placement, collision or active = false. fix_glb_override_names.py
+            renames them; sanity_check_sim.py's 'overrides' check confirms in Isaac Sim.
   simready  no composed prim has a scalar ``inputs:texture_scale`` (the Isaac Sim 5 fix).
             Scalars left in layers the scene never composes are INFO only.
   stage     Z-up, metersPerUnit 1, defaultPrim set.
@@ -41,6 +42,9 @@ _HERE = Path(__file__).resolve().parent
 _spec = importlib.util.spec_from_file_location("convert", _HERE / "convert_scenes_simready.py")
 conv = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(conv)
+_spec = importlib.util.spec_from_file_location("fix", _HERE / "fix_glb_override_names.py")
+fix = importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(fix)
 
 PATTERN = "Collected_export_version/export_version.usd"
 LAYER_EXTS = {".usd", ".usda", ".usdc", ".usdz", ".glb", ".gltf", ".obj", ".fbx"}
@@ -72,13 +76,6 @@ def glb_ok(path: str) -> bool:
         return False
     magic, version, length = struct.unpack("<4sII", head)
     return magic == b"glTF" and version == 2 and length == os.path.getsize(path)
-
-
-def glb_json(path: str) -> dict:
-    with open(path, "rb") as f:
-        f.seek(12)
-        length, kind = struct.unpack("<I4s", f.read(8))
-        return json.loads(f.read(length)) if kind == b"JSON" else {}
 
 
 def check_scene(scene_dir: Path, pattern: str) -> dict:
@@ -148,22 +145,12 @@ def check_scene(scene_dir: Path, pattern: str) -> dict:
     for a in assets:
         if a.lower().endswith(".glb") and not glb_ok(a):
             add("FAIL", "glb", f"bad glTF header or length: {rel(a)}")
-    # A non-ASCII glTF node name becomes one '_' per byte in Isaac Sim 4.5 but one per character
-    # in 5, so 'over' specs the scene authored against 4.5 names miss the node in 5.
-    odd = []
-    for prim in stage.TraverseAll():
-        payload = prim.GetMetadata("payload")
-        if not payload or not prim.IsActive() or not prim.GetAllChildren():  # children = overrides (glb not loaded here)
-            continue
-        layer = next(s.layer for s in prim.GetPrimStack() if s.HasInfo("payload"))
-        for item in payload.GetAddedOrExplicitItems():
-            path = layer.ComputeAbsolutePath(item.assetPath)
-            if path.lower().endswith(".glb") and os.path.isfile(path) and glb_ok(path) and any(
-                    not n.get("name", "").isascii() for key in ("nodes", "meshes") for n in glb_json(path).get(key, [])):
-                odd.append(str(prim.GetPath()))
-    if odd:
-        add("WARN", "glb", f"{len(odd)} .glb model(s) with non-ASCII node names carry scene overrides that may "
-                           f"miss in Isaac Sim 5, e.g. {odd[0]}")
+    stale = fix.stale_overrides(stage)
+    if stale:
+        prim, new = stale[0]
+        add("FAIL", "glb", f"{len(stale)} override(s) target a .glb node by its Isaac Sim 4.5 name, which "
+                           f"Isaac Sim 5 does not match (fix_glb_override_names.py renames them), "
+                           f"e.g. {prim.GetPath()} -> {new}")
 
     # simready: judged on the composed stage, since that is what Isaac Sim renders. Layers
     # the scene never composes (e.g. unused layers inside a .usdz) can still hold scalars.
