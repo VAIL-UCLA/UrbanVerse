@@ -1,0 +1,18 @@
+{
+ "about": "Canonical view of each CraftBench scene for scripts/sanity_check_render.py: the camera at 'eye' looks at 'target', 20 m ahead of it (world coordinates, Z up, meters). Each is the first pose of the scene's preview flythrough (cam0_to_world.txt), at the focal length the shipped previews were rendered with (Kit's default 20.955 mm aperture, so 70 degrees horizontally).",
+ "focal_mm": 15.0,
+ "views": {
+  "scene_01_residential_street_dual_sidewalks_dense_bollards_trash_bags": {"eye": [-736.14, 490.463, 6.0], "target": [-717.432, 490.551, -1.069]},
+  "scene_02_residential_street_single_sidewalk_door_to_street_buildings": {"eye": [-737.54, 492.063, 3.9], "target": [-717.821, 492.156, 0.565]},
+  "scene_03_residential_street_dual_sidewalks_clean": {"eye": [-737.54, 490.363, 7.2], "target": [-718.619, 490.363, 0.722]},
+  "scene_04_commercial_street_asymmetric_sidewalks_benches_bicycles": {"eye": [-738.44, 490.363, 5.3], "target": [-719.254, 490.453, -0.347]},
+  "scene_05_japanese_tourist_street_dual_sidewalks_blocked_by_vehicles": {"eye": [-736.84, 490.363, 3.6], "target": [-716.847, 490.457, 4.124]},
+  "scene_06_bar_street_dual_sidewalks_obstructed_fallen_scooters": {"eye": [-740.64, 490.363, 6.1], "target": [-721.63, 490.452, -0.114]},
+  "scene_07_narrow_alley_outdoor_dining": {"eye": [-725.54, 490.363, 3.1], "target": [-705.564, 490.457, 2.123]},
+  "scene_08_commercial_street_bike_lane_dual_sidewalks": {"eye": [-736.74, 489.363, 5.1], "target": [-717.785, 489.452, -1.279]},
+  "scene_09_cbd_t_intersection_construction_sites": {"eye": [-734.84, 490.363, 5.9], "target": [-714.954, 490.456, 3.775]},
+  "scene_10_cbd_cross_intersection_diverse_obstacles": {"eye": [-699.44, 491.863, 5.4], "target": [-679.782, 491.955, 1.721]},
+  "scene_11_urban_park_dogs_sports_area": {"eye": [-735.84, 490.363, 2.0], "target": [-715.84, 490.363, 2.0]},
+  "scene_12_courtyard_plaza_central_fountain": {"eye": [-734.513, 499.362, 6.007], "target": [-721.071, 486.936, -2.05]}
+ }
+}

@@ -16,9 +16,6 @@ startup, see render_scene_preview.py):
   colliders  every other CollisionAPI prim is real geometry, else that object is walk-through.
   log        Kit logged no missing-file, file-format or USD->MDL type errors (the latter is
              exactly what the sim-ready texture_scale fix removed). PhysX errors WARN.
-  render     an RTX frame from cam0_to_world.txt pose 0 (the shipped preview_front.png
-             pose) is saved with its brightness, share of pure black/white pixels and its
-             correlation with preview_front.png. --no-render skips it.
   ground     PhysX raycasts straight down from --probes poses along the camera path reach
              static ground (objects on the way, e.g. a bin, are looked through). The hit prim
              types show whether that ground is the road mesh or an infinite fallback Plane. A
@@ -28,10 +25,12 @@ startup, see render_scene_preview.py):
              Dynamic rigid bodies of the scene must not fall >1 m.
   go2        (--go2) physics_check_go2.py at the first ground hit.
 
-Writes <out>/<scene>.{log,json} and <scene>_render.png; Kit's temporary files go to
-<out>/.kit_tmp/<scene> and are deleted after each scene. A scene is FAIL when it is broken,
-ERROR when the check itself could not finish (e.g. Kit hung after the GPU ran out of memory:
-rerun it, with --no-render if the GPU is busy); exit 1 on either.
+Nothing is rendered, so a busy GPU is fine; what a scene looks like is
+sanity_check_render.py's job (one image per scene, from its canonical view).
+
+Writes <out>/<scene>.{log,json}; Kit's temporary files go to <out>/.kit_tmp/<scene> and are
+deleted after each scene. A scene is FAIL when it is broken, ERROR when the check itself
+could not finish (Kit crashed or hung: rerun it); exit 1 on either.
 """
 import argparse
 import json
@@ -72,16 +71,12 @@ def child(a) -> None:
     from isaaclab.app import AppLauncher
 
     a.headless = True
-    a.enable_cameras = not a.no_render
-    # glb plugin at startup; cap streamed textures so ~1 Gpx of 4K ground textures fit on a 16 GB card
-    a.kit_args = ("--enable omni.kit.asset_converter --/rtx-transient/resourcemanager/enableTextureStreaming=true "
-                  f"--/rtx-transient/resourcemanager/texturestreaming/memoryBudget={a.tex_budget}")
+    a.kit_args = "--enable omni.kit.asset_converter"  # the .glb plugin has to be there at startup
     app = AppLauncher(a).app
 
     import numpy as np
     import omni.usd
-    from PIL import Image
-    from pxr import Gf, Usd, UsdGeom, UsdPhysics
+    from pxr import Usd, UsdGeom, UsdPhysics
 
     scene_dir = Path(a.one)
     out = Path(a.out)
@@ -147,36 +142,6 @@ def child(a) -> None:
         if hollow:
             add(rec, "FAIL", "colliders", f"{len(hollow)} of {len(colliders)} colliders have no geometry "
                                           f"(walk-through), e.g. {hollow[0]}")
-
-        if not a.no_render and cams:
-            import omni.replicator.core as rep
-
-            cam = UsdGeom.Camera.Define(stage, "/SanityCam")
-            cam.GetFocalLengthAttr().Set(a.focal_mm)
-            cam.GetClippingRangeAttr().Set(Gf.Vec2f(0.1, 100000.0))
-            xf = UsdGeom.Xformable(cam)
-            xf.ClearXformOpOrder()
-            xf.AddTransformOp().Set(Gf.Matrix4d(*cams[0].flatten().tolist()))
-            rp = rep.create.render_product("/SanityCam", (1280, 720))
-            rgb = rep.AnnotatorRegistry.get_annotator("rgb")
-            rgb.attach(rp)
-            t1 = time.perf_counter()
-            while time.perf_counter() - t1 < a.settle:  # async MDL compile + texture streaming
-                app.update()
-            img = np.asarray(rgb.get_data())[..., :3].astype(np.uint8)
-            Image.fromarray(img).save(out / f"{scene_dir.name}_render.png")
-            gray = img.mean(axis=2)
-            stats = {"mean": round(float(gray.mean()), 1),
-                     "black": round(float((gray < 8).mean()), 3), "white": round(float((gray > 247).mean()), 3)}
-            preview = scene_dir / "preview_front.png"
-            if preview.is_file():
-                ref = np.asarray(Image.open(preview).convert("L").resize((img.shape[1], img.shape[0])), dtype=float)
-                stats["corr_preview"] = round(float(np.corrcoef(gray.ravel(), ref.ravel())[0, 1]), 3)
-            rec["stats"]["render"] = stats
-            if stats["black"] + stats["white"] > 0.5 or stats["mean"] < 10:
-                add(rec, "FAIL", "render", f"frame is mostly flat black/white: {stats}")
-            elif stats.get("corr_preview", 1.0) < a.min_corr:
-                add(rec, "WARN", "render", f"frame differs from preview_front.png: {stats}")
 
         import isaaclab.sim as sim_utils
         from isaaclab.sim import SimulationCfg, SimulationContext
@@ -269,8 +234,8 @@ def child(a) -> None:
     finally:
         (out / f"{scene_dir.name}.json").write_text(json.dumps(rec, indent=1))
         print("[sanity-child] result written", flush=True)
-        # Nothing to save, and Kit's shutdown can hang on Linux with texture streaming on
-        # (seen here: minutes of per-frame texture-upload errors inside app.close()).
+        # Nothing to save, and Kit's shutdown can hang on Linux (seen here when rendering with
+        # texture streaming on: minutes of per-frame texture-upload errors inside app.close()).
         os._exit(0)
 
 
@@ -285,8 +250,8 @@ def scan_log(text: str, rec: dict) -> None:
     oom = sum(bool(LOG_GPU_OOM.search(line)) for line in lines)
     tex = [line for line in lines if LOG_TEXTURE.search(line)]
     if oom:
-        add(rec, "WARN", "env", f"GPU ran out of memory while rendering ({oom} lines, {len(tex)} texture "
-                                f"failures): the render is incomplete; lower --tex-budget or free the GPU")
+        add(rec, "WARN", "env", f"GPU ran out of memory ({oom} lines, {len(tex)} texture failures), so what was "
+                                f"rendered is incomplete: free the GPU, or lower sanity_check_render.py's --tex-budget")
     elif tex:
         add(rec, "FAIL", "log", f"{len(tex)} texture load failure(s), e.g. {tex[0].strip()[:220]}")
     physx = [line for line in lines if LOG_PHYSX.search(line)]
@@ -300,8 +265,17 @@ def scan_log(text: str, rec: dict) -> None:
     rec["log_errors"] = dict(sorted(errors.items(), key=lambda kv: -kv[1])[:40])
 
 
+def peak_ram_gb(pid: int) -> float:
+    """Peak resident memory of a running process (the kernel's high-water mark); 0 once it is gone."""
+    try:
+        with open(f"/proc/{pid}/status") as f:
+            return next(int(line.split()[1]) for line in f if line.startswith("VmHWM:")) / 2**20
+    except (OSError, StopIteration, ValueError):
+        return 0.0
+
+
 def run_child(cmd: list, log: Path, tmp: Path, a) -> tuple:
-    """Run one Kit child, logging to `log`. Returns (exit status, whether it was killed)."""
+    """Run one Kit child, logging to `log`. Returns (exit status, whether it was killed, peak RAM in GB)."""
     # The .glb importer extracts every model's textures to $TMPDIR/<hash>/textures and only
     # removes them on a clean shutdown, which the child skips: give it a TMPDIR we delete.
     shutil.rmtree(tmp, ignore_errors=True)
@@ -312,18 +286,19 @@ def run_child(cmd: list, log: Path, tmp: Path, a) -> tuple:
             # After a GPU out-of-memory, a single app.update() can block forever, so the child
             # cannot time itself out: kill it when its log stalls or the scene runs too long.
             proc = subprocess.Popen(cmd, stdout=f, stderr=subprocess.STDOUT, env={**os.environ, "TMPDIR": str(tmp)})
-            size, last = 0, t0
+            size, last, peak = 0, t0, 0.0
             while (rc := proc.poll()) is None:
                 time.sleep(2)
                 now = time.perf_counter()
+                peak = max(peak, peak_ram_gb(proc.pid))
                 if log.stat().st_size != size:
                     size, last = log.stat().st_size, now
                 if now - last > a.stall or now - t0 > a.timeout:
                     proc.kill()
                     proc.wait()
                     return (f"killed, no output for {now - last:.0f}s" if now - last > a.stall
-                            else f"killed after {now - t0:.0f}s"), True
-        return rc, False
+                            else f"killed after {now - t0:.0f}s"), True, peak
+        return rc, False, peak
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
 
@@ -349,13 +324,10 @@ def parent(a) -> None:
         log, res = out / f"{d.name}.log", out / f"{d.name}.json"
         res.unlink(missing_ok=True)
         cmd = [sys.executable, __file__, "--one", str(d), "--pattern", a.pattern, "--out", str(out),
-               "--probes", str(a.probes), "--settle", str(a.settle), "--focal-mm", str(a.focal_mm),
-               "--min-corr", str(a.min_corr), "--drop-s", str(a.drop_s), "--max-wait", str(a.max_wait),
-               "--tex-budget", str(a.tex_budget)]
-        cmd += ["--no-render"] if a.no_render else []
+               "--probes", str(a.probes), "--drop-s", str(a.drop_s), "--max-wait", str(a.max_wait)]
         t0 = time.perf_counter()
         for attempt in (1, 2):  # Kit now and then crashes while starting up (seen: in its telemetry thread)
-            rc, killed = run_child(cmd, log, out / ".kit_tmp" / d.name, a)
+            rc, killed, peak = run_child(cmd, log, out / ".kit_tmp" / d.name, a)
             if res.exists() or killed:
                 break
         rec = json.loads(res.read_text()) if res.exists() else \
@@ -363,6 +335,7 @@ def parent(a) -> None:
              "stats": {}}
         if attempt > 1:
             add(rec, "INFO", "run", "Kit crashed without a result on the first try; this is the second")
+        rec["stats"]["peak_ram_gb"] = round(peak, 1)
         scan_log(log.read_text(errors="replace"), rec)
         clear = [h for h in rec.get("ground_hits", []) if h[4]]
         if a.go2 and clear:
@@ -382,16 +355,20 @@ def parent(a) -> None:
         n_fail += status == "FAIL"
         n_error += status == "ERROR"
         n_warn += status == "WARN"
-        s, g, r = rec["stats"], rec["stats"].get("ground", {}), rec["stats"].get("render", {})
-        print(f"[sim] {status:4} {d.name}  {time.perf_counter() - t0:.0f}s, load {s.get('load_s', '?')}s, "
+        s, g = rec["stats"], rec["stats"].get("ground", {})
+        print(f"[sim] {status:4} {d.name}  {time.perf_counter() - t0:.0f}s, {peak:.1f} GB RAM, "
+              f"load {s.get('load_s', '?')}s, "
               f"{s.get('glb_payloads', '?')} glb, {s.get('colliders', '?')} colliders, "
               f"ground {g.get('hits', '?')}/{g.get('probes', '?')} z={g.get('z')} {g.get('hit_types', '')}, "
-              + (f"render mean={r['mean']} black={r['black']} corr={r.get('corr_preview')}, " if r else "")
-              + f"{s.get('log_errors', 0)} Kit errors", flush=True)
+              f"{s.get('log_errors', 0)} Kit errors", flush=True)
         for i in rec["issues"]:
             print(f"        {i['level']:5} {i['check']}: {i['msg']}", flush=True)
+    try:
+        (out / ".kit_tmp").rmdir()
+    except OSError:
+        pass
     print(f"[sim] {len(scenes) - n_fail - n_error - n_warn} ok, {n_warn} WARN, {n_error} ERROR, {n_fail} FAIL "
-          f"of {len(scenes)} scene(s); logs, renders and JSON in {out}")
+          f"of {len(scenes)} scene(s); logs and JSON in {out}")
     if n_fail or n_error:
         raise SystemExit(1)
 
@@ -399,17 +376,12 @@ def parent(a) -> None:
 def main() -> None:
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--root", help="Directory with one sub-directory per scene.")
-    p.add_argument("--out", required=True, help="Directory for logs, renders and per-scene JSON.")
+    p.add_argument("--out", required=True, help="Directory for logs and per-scene JSON.")
     p.add_argument("--pattern", default=PATTERN, help=f"Root layer relative to each scene dir (default {PATTERN}).")
     p.add_argument("--scene", action="append", default=[], help="Scene name or id prefix (scene_03); repeatable.")
     p.add_argument("--probes", type=int, default=12, help="Camera-path poses to raycast and drop cubes at.")
-    p.add_argument("--no-render", action="store_true")
-    p.add_argument("--settle", type=float, default=60.0, help="Seconds of rendering before the capture.")
-    p.add_argument("--focal-mm", type=float, default=18.0)
-    p.add_argument("--min-corr", type=float, default=0.5, help="WARN below this correlation with preview_front.png.")
+    p.add_argument("--no-render", action="store_true", help=argparse.SUPPRESS)  # rendering moved out; accepted
     p.add_argument("--drop-s", type=float, default=2.0, help="Simulated seconds for the cube drop.")
-    p.add_argument("--tex-budget", type=float, default=0.3,
-                   help="Texture streaming budget as a fraction of GPU memory (default 0.3).")
     p.add_argument("--max-wait", type=float, default=900.0, help="FAIL if the stage is still loading after this.")
     p.add_argument("--timeout", type=float, default=1200.0, help="Kill a scene's Kit process after this many seconds.")
     p.add_argument("--stall", type=float, default=300.0,

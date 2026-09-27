@@ -16,8 +16,8 @@ Per scene (``<scene>/<pattern>``, CraftBench's root layer by default):
             names it differently (non-ASCII glTF names): in 5 that override misses and the
             node loses its placement, collision or active = false. fix_glb_override_names.py
             renames them; sanity_check_sim.py's 'overrides' check confirms in Isaac Sim.
-  simready  no composed prim has a scalar ``inputs:texture_scale`` (the Isaac Sim 5 fix).
-            Scalars left in layers the scene never composes are INFO only.
+  simready  no composed ``inputs:texture_scale`` holds a scalar (the Isaac Sim 5 fix), whatever
+            type it is declared as. Scalars left in layers the scene never composes are INFO.
   stage     Z-up, metersPerUnit 1, defaultPrim set.
   physics   at least one collider; rigid bodies (kinematic or not) are reported.
   camera    cam0_to_world.txt, when present, holds finite rigid 4x4 transforms.
@@ -154,12 +154,16 @@ def check_scene(scene_dir: Path, pattern: str) -> dict:
 
     # simready: judged on the composed stage, since that is what Isaac Sim renders. Layers
     # the scene never composes (e.g. unused layers inside a .usdz) can still hold scalars.
-    scalar = [str(prim.GetPath()) for prim in stage.Traverse()
+    # Judged by the value: some are declared float2 and still hold a scalar ('float2 ... = 1000').
+    scalar = [(str(prim.GetPath()), attr) for prim in Usd.PrimRange.Stage(stage, Usd.TraverseInstanceProxies())
               if (attr := prim.GetAttribute("inputs:texture_scale")) and attr.HasAuthoredValue()
-              and attr.GetTypeName() in conv.up._SCALAR_TYPES]
+              and not isinstance(attr.Get(), (Gf.Vec2f, Gf.Vec2d, Gf.Vec2h))]
     if scalar:
-        add("FAIL", "simready", f"{len(scalar)} composed scalar inputs:texture_scale (renders black/white in "
-                                f"Isaac Sim 5), e.g. {scalar[0]}")
+        path, attr = scalar[0]
+        mistyped = sum(attr.GetTypeName() not in conv.up._SCALAR_TYPES for _, attr in scalar)
+        add("FAIL", "simready", f"{len(scalar)} composed inputs:texture_scale hold a scalar (renders black/white in "
+                                f"Isaac Sim 5), {mistyped} of them declared float2, e.g. {path} = "
+                                f"{attr.GetTypeName()} {attr.Get()!r}")
     used = {layer.identifier for layer in stage.GetUsedLayers()}
     unused = {layer.identifier: n for layer in layers if layer.identifier not in used
               and (n := conv.scalar_texture_scale_count(layer.identifier))}
