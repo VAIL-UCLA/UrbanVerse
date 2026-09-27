@@ -52,7 +52,8 @@ def sha256(path: Path) -> str:
 
 
 def scalar_texture_scale_count(layer_path: Path) -> int:
-    """Scalar inputs:texture_scale specs left in a layer (0 = clean)."""
+    """Scalar inputs:texture_scale specs left in a layer (0 = clean): scalar-typed ones, and
+    float2-typed ones authored with a scalar value, which Isaac Sim 5 rejects just the same."""
     from pxr import Sdf
     layer = Sdf.Layer.FindOrOpen(str(layer_path))
     if layer is None:
@@ -60,7 +61,8 @@ def scalar_texture_scale_count(layer_path: Path) -> int:
     n = 0
     for ps in up._all_prim_specs(layer):
         a = ps.attributes.get("inputs:texture_scale")
-        if a is not None and a.typeName in up._SCALAR_TYPES and a.default is not None:
+        if a is not None and a.default is not None and (
+                a.typeName in up._SCALAR_TYPES or isinstance(a.default, (int, float))):
             n += 1
     return n
 
@@ -107,6 +109,22 @@ def convert_scene(scene_dir: str, root_usd: str, root: str, backup_dir: str,
     return rec
 
 
+def merge_record(old: dict | None, new: dict) -> dict:
+    """A --redo record on top of the scene's previous one. Layers changed before keep their entry
+    (its sha256 still holds, this run left them alone); a layer changed again adds up its counts
+    and takes the new hash; anything else recorded for the scene (e.g. by
+    fix_glb_override_names.py) stays."""
+    if not old:
+        return new
+    before = {e["layer"]: e for e in old.get("layers_changed", [])}
+    again = []
+    for e in new["layers_changed"]:
+        prev = before.pop(e["layer"], {})
+        again.append({**prev, **e, "attrs_fixed": prev.get("attrs_fixed", 0) + e["attrs_fixed"]})
+    return {**old, **new, "layers_changed": list(before.values()) + again,
+            "attrs_fixed": old.get("attrs_fixed", 0) + new["attrs_fixed"]}
+
+
 def main() -> None:
     p = argparse.ArgumentParser(description=__doc__.splitlines()[0],
                                 formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -123,7 +141,9 @@ def main() -> None:
     p.add_argument("--keep-float2", action="store_true")
     p.add_argument("--workers", type=int, default=4)
     p.add_argument("--limit", type=int, default=0)
-    p.add_argument("--redo", action="store_true", help="Re-process scenes already ok in the manifest.")
+    p.add_argument("--redo", action="store_true", help="Re-process scenes already ok in the manifest; their records "
+                                                        "are merged, not replaced.")
+    p.add_argument("--scene", action="append", default=[], help="Only this scene (name or id prefix); repeatable.")
     a = p.parse_args()
 
     root = Path(a.root).resolve()
@@ -137,6 +157,8 @@ def main() -> None:
         manifest.setdefault("scenes", {})
 
     scenes = sorted(d for d in root.iterdir() if d.is_dir() and not d.name.startswith("."))
+    if a.scene:
+        scenes = [d for d in scenes if any(d.name == w or d.name.startswith(w + "_") for w in a.scene)]
     todo, missing_root, done = [], [], 0
     for d in scenes:
         root_usd = d / a.pattern
@@ -167,7 +189,7 @@ def main() -> None:
                 for d, u in todo}
         for i, fut in enumerate(as_completed(futs), 1):
             rec = fut.result()
-            manifest["scenes"][rec["scene"]] = rec
+            manifest["scenes"][rec["scene"]] = merge_record(manifest["scenes"].get(rec["scene"]), rec)
             n_ok += rec["ok"]
             n_bad += not rec["ok"]
             status = "ok " if rec["ok"] else "BAD"

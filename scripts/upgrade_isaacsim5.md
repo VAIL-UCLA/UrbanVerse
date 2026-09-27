@@ -159,6 +159,12 @@ The patcher:
    attributes we need to patch.
 2. Identifies layers that directly contain a scalar `inputs:texture_scale`
    (type `int` / `float` / `double` / `half`) or an already-`float2` one.
+   A `float2` one authored with a scalar value (`float2 inputs:texture_scale
+   = 1000`) counts as scalar: the value reaches MDL as that scalar, so 4.5
+   and 5.x reject it the same way. `--keep-float2` in
+   `convert_scenes_simready.py` keeps valid `float2` values only; it
+   re-authors these like the scalar-typed ones. CraftBench scenes 06, 07, 09
+   and 10 had 75 of them, fixed in the sim-ready release on 2026-09-27.
 3. Computes the transitive closure: any layer that references a patched
    layer also needs a suffixed copy (so the references can be rewritten
    to point at the new siblings).

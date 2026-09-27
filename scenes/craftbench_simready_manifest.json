@@ -133,13 +133,19 @@
      "attrs_fixed": 7,
      "sha256": "d87ab8962c41f80fdd5744de5e92d00130709c071289cca1b51ea8a11f25cb2d",
      "bytes": 453193
+    },
+    {
+     "layer": "scene_06_bar_street_dual_sidewalks_obstructed_fallen_scooters/Collected_export_version/home/boleilab/Documents/sim2sim_test_scenes/Ground_materials/Big_Block_03.usd",
+     "attrs_fixed": 14,
+     "sha256": "69a37ee4c2943b39cd1a676b4410007966eb616fab6c2f930686f46fd2da7b90",
+     "bytes": 1729027
     }
    ],
-   "attrs_fixed": 14,
+   "attrs_fixed": 28,
    "error": null,
    "layers_in_composition": 6,
    "scalar_left": 0,
-   "seconds": 1.7
+   "seconds": 0.1
   },
   "scene_04_commercial_street_asymmetric_sidewalks_benches_bicycles": {
    "scene": "scene_04_commercial_street_asymmetric_sidewalks_benches_bicycles",
@@ -181,13 +187,19 @@
      "attrs_fixed": 7,
      "sha256": "d87ab8962c41f80fdd5744de5e92d00130709c071289cca1b51ea8a11f25cb2d",
      "bytes": 453193
+    },
+    {
+     "layer": "scene_07_narrow_alley_outdoor_dining/Collected_export_version/home/boleilab/Documents/sim2sim_test_scenes/scene_07/Collected_export_version/home/boleilab/Documents/sim2sim_test_scenes/Ground_materials/Big_Block_03.usd",
+     "attrs_fixed": 14,
+     "sha256": "69a37ee4c2943b39cd1a676b4410007966eb616fab6c2f930686f46fd2da7b90",
+     "bytes": 1729027
     }
    ],
-   "attrs_fixed": 14,
+   "attrs_fixed": 28,
    "error": null,
    "layers_in_composition": 6,
    "scalar_left": 0,
-   "seconds": 1.7
+   "seconds": 0.1
   },
   "scene_08_commercial_street_bike_lane_dual_sidewalks": {
    "scene": "scene_08_commercial_street_bike_lane_dual_sidewalks",
@@ -307,23 +319,23 @@
      "bytes": 453193
     },
     {
-     "layer": "scene_09_cbd_t_intersection_construction_sites/Collected_export_version/Ground_materials/Big_Block.usd",
-     "attrs_fixed": 14,
-     "sha256": "53e0d4c5e8f250eb5d96d36a359ff862fb6d2ebdb691c75dad72759ffeb9fe57",
-     "bytes": 5892120
-    },
-    {
      "layer": "scene_09_cbd_t_intersection_construction_sites/Collected_export_version/export_version.usd",
      "prims_renamed": 1,
      "sha256": "8246f005f4a1b21e03b38a8d6f7f69d48c5c0eb47eb41653a7a148c9ccd0378c",
      "bytes": 395031337
+    },
+    {
+     "layer": "scene_09_cbd_t_intersection_construction_sites/Collected_export_version/Ground_materials/Big_Block.usd",
+     "attrs_fixed": 25,
+     "sha256": "7621769088c7c390ef8b77ec5b1747a8c11b2fc82ab4a60d3bb36bdadfaa6161",
+     "bytes": 5894373
     }
    ],
-   "attrs_fixed": 28,
+   "attrs_fixed": 39,
    "error": null,
    "layers_in_composition": 6,
    "scalar_left": 0,
-   "seconds": 1.5,
+   "seconds": 0.1,
    "overrides_renamed": [
     {
      "layer": "scene_09_cbd_t_intersection_construction_sites/Collected_export_version/export_version.usd",
@@ -351,22 +363,28 @@
     },
     {
      "layer": "scene_10_cbd_cross_intersection_diverse_obstacles/Collected_export_version/home/boleilab/Documents/sim2sim_test_scenes/scene_10/Collected_export_version/home/boleilab/Documents/sim2sim_test_scenes/Ground_materials/Big_Block.usd",
+     "attrs_fixed": 25,
+     "sha256": "7621769088c7c390ef8b77ec5b1747a8c11b2fc82ab4a60d3bb36bdadfaa6161",
+     "bytes": 5894373
+    },
+    {
+     "layer": "scene_10_cbd_cross_intersection_diverse_obstacles/Collected_export_version/home/boleilab/Documents/sim2sim_test_scenes/Ground_materials/Big_Block_03.usd",
      "attrs_fixed": 14,
-     "sha256": "53e0d4c5e8f250eb5d96d36a359ff862fb6d2ebdb691c75dad72759ffeb9fe57",
-     "bytes": 5892120
+     "sha256": "69a37ee4c2943b39cd1a676b4410007966eb616fab6c2f930686f46fd2da7b90",
+     "bytes": 1729027
     },
     {
      "layer": "scene_10_cbd_cross_intersection_diverse_obstacles/Collected_export_version/home/boleilab/Documents/sim2sim_test_scenes/Ground_materials/Big_Block.usd",
-     "attrs_fixed": 14,
-     "sha256": "53e0d4c5e8f250eb5d96d36a359ff862fb6d2ebdb691c75dad72759ffeb9fe57",
-     "bytes": 5892120
+     "attrs_fixed": 25,
+     "sha256": "7621769088c7c390ef8b77ec5b1747a8c11b2fc82ab4a60d3bb36bdadfaa6161",
+     "bytes": 5894373
     }
    ],
-   "attrs_fixed": 42,
+   "attrs_fixed": 78,
    "error": null,
    "layers_in_composition": 8,
    "scalar_left": 0,
-   "seconds": 1.6
+   "seconds": 0.2
   }
  }
 }

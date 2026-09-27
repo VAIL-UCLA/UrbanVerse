@@ -142,7 +142,10 @@ def _patch_prim_spec(prim_spec: Sdf.PrimSpec, dry_run: bool,
 
     # Case A: already Float2 — just rewrite the default value in place.
     if attr_spec.typeName == Sdf.ValueTypeNames.Float2 and want == "float2":
-        if keep_float2:
+        # Declared float2 but authored as a scalar ('float2 inputs:texture_scale = 1000'): the
+        # value reaches MDL as that scalar, so 4.5 and 5.x reject it like a scalar-typed one.
+        scalar_value = isinstance(val, (int, float))
+        if keep_float2 and not scalar_value:
             return 0
         try:
             vx = float(val[0])
@@ -158,10 +161,10 @@ def _patch_prim_spec(prim_spec: Sdf.PrimSpec, dry_run: bool,
             target_x = target_y = float(override_value)
         else:
             target_x, target_y = vx * scale, vy * scale
-        if abs(target_x - vx) < 1e-9 and abs(target_y - vy) < 1e-9:
+        if abs(target_x - vx) < 1e-9 and abs(target_y - vy) < 1e-9 and not scalar_value:
             return 0
-        print(f"  {attr_spec.path}  Float2({vx}, {vy}) "
-              f"-> Float2({target_x}, {target_y})")
+        print(f"  {attr_spec.path}  " + (f"Float2 holding a scalar ({val})" if scalar_value else f"Float2({vx}, {vy})")
+              + f" -> Float2({target_x}, {target_y})")
         if not dry_run:
             attr_spec.default = Gf.Vec2f(target_x, target_y)
         return 1

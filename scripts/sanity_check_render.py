@@ -11,9 +11,9 @@ a fresh headless Kit process: the stage is opened, a camera is spawned at the sc
 canonical view, and once the stage has loaded and the frame has stopped changing it is
 saved as <out>/<scene>.png. One image per scene; logs go to <out>/logs/. Kit's temporary
 files and texture cache (1-2 GB a scene) go to <out>/.kit_tmp and are deleted after each
-scene, so nothing is left in /tmp or ~/.cache/ov. Isaac Sim needs a lot of RAM for these
-scenes, 13-25 GB at peak for CraftBench (each scene's line reports it): on a 32 GB machine,
-close other big programs first.
+scene, so nothing is left in /tmp or ~/.cache/ov. Rendering takes a lot of RAM: 8-25 GB at
+peak per CraftBench scene (each scene's line reports it; loading without rendering is 3-7 GB).
+On a 32 GB machine, close other big programs first.
 
 The canonical view of a scene is, in this order:
 

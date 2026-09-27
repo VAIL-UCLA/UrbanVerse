@@ -86,6 +86,12 @@ collision, and a building part that scene 03 switches off was back on. The 6 ove
 the 5.x names (`P__s_Material_0`, `Betongv__gg001_Inne_0`); nothing else changed. If you
 downloaded scenes 03, 09 or 11 before this date, delete them and download them again.
 
+**Update, Sep 27 2026 - scenes 06, 07, 09 and 10.** 75 ground-material `texture_scale` inputs
+were declared `float2` but held a scalar (`1000`), and the first pass kept them as valid
+`float2`s. Isaac Sim 5.x rejects that scalar just the same, so those roads and sidewalks rendered
+flat black. They now hold the MDL default like the rest; nothing else changed. If you downloaded
+scenes 06, 07, 09 or 10 before this date, delete them and download them again.
+
 Tooling and per-scene provenance (every changed layer with its sha256):
 [`scripts/upgrade_isaacsim5.md`](https://github.com/VAIL-UCLA/UrbanVerse/blob/main/scripts/upgrade_isaacsim5.md),
 [`scenes/craftbench_simready_manifest.json`](https://github.com/VAIL-UCLA/UrbanVerse/blob/main/scenes/craftbench_simready_manifest.json).
