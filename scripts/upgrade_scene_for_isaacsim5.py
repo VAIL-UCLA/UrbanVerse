@@ -148,23 +148,18 @@ def _patch_prim_spec(prim_spec: Sdf.PrimSpec, dry_run: bool,
         if keep_float2 and not scalar_value:
             return 0
         try:
-            vx = float(val[0])
-            vy = float(val[1])
-        except (TypeError, IndexError):
-            # Malformed: typeName is float2 but default was authored as a scalar.
-            try:
-                vx = vy = float(val)
-            except (TypeError, ValueError):
-                print(f"  {attr_spec.path}  skipped (unreadable Float2 default: {val!r})")
-                return 0
+            vx, vy = (float(val), float(val)) if scalar_value else (float(val[0]), float(val[1]))
+        except (TypeError, IndexError, ValueError):
+            print(f"  {attr_spec.path}  skipped (unreadable Float2 default: {val!r})")
+            return 0
         if override_value is not None:
             target_x = target_y = float(override_value)
         else:
             target_x, target_y = vx * scale, vy * scale
         if abs(target_x - vx) < 1e-9 and abs(target_y - vy) < 1e-9 and not scalar_value:
             return 0
-        print(f"  {attr_spec.path}  " + (f"Float2 holding a scalar ({val})" if scalar_value else f"Float2({vx}, {vy})")
-              + f" -> Float2({target_x}, {target_y})")
+        was = f"Float2 holding a scalar ({val})" if scalar_value else f"Float2({vx}, {vy})"
+        print(f"  {attr_spec.path}  {was} -> Float2({target_x}, {target_y})")
         if not dry_run:
             attr_spec.default = Gf.Vec2f(target_x, target_y)
         return 1

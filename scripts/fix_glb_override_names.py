@@ -25,7 +25,6 @@ records the layer's new sha256 in --manifest::
 sanity_check_sim.py's 'overrides' check confirms the result in Isaac Sim.
 """
 import argparse
-import importlib.util
 import json
 import os
 import shutil
@@ -36,10 +35,7 @@ from pathlib import Path
 
 from pxr import Sdf, Usd
 
-_HERE = Path(__file__).resolve().parent
-_spec = importlib.util.spec_from_file_location("convert", _HERE / "convert_scenes_simready.py")
-conv = importlib.util.module_from_spec(_spec)
-_spec.loader.exec_module(conv)
+import convert_scenes_simready as convert
 
 PATTERN = "Collected_export_version/export_version.usd"
 
@@ -153,7 +149,7 @@ def main() -> None:
                     entry = {"layer": rel}
                     rec["layers_changed"].append(entry)
                 entry["prims_renamed"] = entry.get("prims_renamed", 0) + sum(r["layer"] == rel for r in done)
-                entry.update(sha256=conv.sha256(root / rel), bytes=(root / rel).stat().st_size)
+                entry.update(sha256=convert.sha256(root / rel), bytes=(root / rel).stat().st_size)
             tmp = manifest_path.with_suffix(".tmp")
             tmp.write_text(json.dumps(manifest, indent=1))
             tmp.replace(manifest_path)

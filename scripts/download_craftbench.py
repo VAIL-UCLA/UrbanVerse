@@ -50,6 +50,15 @@ def sha256(path: Path) -> str:
     return h.hexdigest()
 
 
+def outdated(bench: Path, scene: str, manifest: dict | None) -> list:
+    """Layers of the scene that the sim-ready conversion changed and that are missing or do not match
+    their sha256 in the manifest (none without a manifest)."""
+    if manifest is None:
+        return []
+    return [e["layer"][len(scene) + 1:] for e in manifest.get(scene, {}).get("layers_changed", [])
+            if not (bench / e["layer"]).is_file() or sha256(bench / e["layer"]) != e["sha256"]]
+
+
 def extract(scene_dir: Path) -> None:
     # Extract beside the target and rename into place, so a killed run never
     # leaves a half-filled Collected_export_version/ that looks finished.
@@ -101,9 +110,7 @@ def main() -> None:
 
     bench = Path(a.root).expanduser().resolve() / "CraftBench"
     manifest = json.loads(Path(a.manifest).read_text())["scenes"] if a.manifest else None
-    stale = [s for s in scenes if manifest and (bench / s / USD).is_file() and any(
-        not (bench / e["layer"]).is_file() or sha256(bench / e["layer"]) != e["sha256"]
-        for e in manifest.get(s, {}).get("layers_changed", []))]
+    stale = [s for s in scenes if (bench / s / USD).is_file() and outdated(bench, s, manifest)]
     for s in stale:
         print(f"[download] {s}: extracted from an earlier release, fetching it again")
     todo = [s for s in scenes if not (bench / s / USD).is_file() or s in stale]
@@ -150,13 +157,9 @@ def main() -> None:
         issues = [n for n in files[s] if n != TAR and not (d / n).is_file()]
         if not (d / USD).is_file():
             issues.append(USD)
-        if manifest is not None:
-            if s not in manifest:
-                issues.append("not in manifest")
-            for layer in manifest.get(s, {}).get("layers_changed", []):
-                q = bench / layer["layer"]
-                if not q.is_file() or sha256(q) != layer["sha256"]:
-                    issues.append(f"sha256 mismatch: {layer['layer'][len(s) + 1:]}")
+        if manifest is not None and s not in manifest:
+            issues.append("not in manifest")
+        issues += [f"sha256 mismatch: {layer}" for layer in outdated(bench, s, manifest)]
         n_bad += bool(issues)
         print(f"[verify] {'BAD' if issues else 'ok '} {s}" + "".join(f"\n           {i}" for i in issues))
 

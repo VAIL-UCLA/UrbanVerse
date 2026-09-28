@@ -1,6 +1,5 @@
 {
- "about": "Canonical view of each CraftBench scene for scripts/sanity_check_render.py: the camera at 'eye' looks at 'target', 20 m ahead of it (world coordinates, Z up, meters). Each is the first pose of the scene's preview flythrough (cam0_to_world.txt), at the focal length the shipped previews were rendered with (Kit's default 20.955 mm aperture, so 70 degrees horizontally).",
- "focal_mm": 15.0,
+ "about": "Canonical view of each CraftBench scene for scripts/sanity_check_render.py: the camera at 'eye' looks at 'target', 20 m ahead of it (world coordinates, Z up, meters). Each is the first pose of the scene's preview flythrough (cam0_to_world.txt); the script renders it at the focal length of the shipped previews.",
  "views": {
   "scene_01_residential_street_dual_sidewalks_dense_bollards_trash_bags": {"eye": [-736.14, 490.463, 6.0], "target": [-717.432, 490.551, -1.069]},
   "scene_02_residential_street_single_sidewalk_door_to_street_buildings": {"eye": [-737.54, 492.063, 3.9], "target": [-717.821, 492.156, 0.565]},
