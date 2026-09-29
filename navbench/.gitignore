@@ -1,0 +1,5 @@
+maps/
+__pycache__/
+*.json.tmp
+routes/examples/*/
+routes/examples/all_routes.txt

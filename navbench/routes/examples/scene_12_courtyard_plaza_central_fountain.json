@@ -1,0 +1,33 @@
+{
+ "format": 1,
+ "scene": "scene_12_courtyard_plaza_central_fountain",
+ "saved": "2026-09-28T16:46:33",
+ "routes": [
+  {
+   "id": "r001",
+   "start": [
+    -765.46,
+    509.21
+   ],
+   "via": [],
+   "goal": [
+    -704.36,
+    528.21
+   ],
+   "note": "example: along the sidewalks"
+  },
+  {
+   "id": "r002",
+   "start": [
+    -694.16,
+    532.01
+   ],
+   "via": [],
+   "goal": [
+    -713.26,
+    496.31
+   ],
+   "note": "example: the tightest found"
+  }
+ ]
+}

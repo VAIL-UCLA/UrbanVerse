@@ -1,0 +1,46 @@
+{
+ "format": 1,
+ "scene": "scene_09_cbd_t_intersection_construction_sites",
+ "saved": "2026-09-28T16:46:23",
+ "routes": [
+  {
+   "id": "r001",
+   "start": [
+    -649.39,
+    441.41
+   ],
+   "via": [],
+   "goal": [
+    -683.89,
+    382.01
+   ],
+   "note": "example: along the sidewalks"
+  },
+  {
+   "id": "r002",
+   "start": [
+    -668.59,
+    557.31
+   ],
+   "via": [],
+   "goal": [
+    -604.39,
+    564.01
+   ],
+   "note": "example: across a street"
+  },
+  {
+   "id": "r003",
+   "start": [
+    -704.89,
+    395.71
+   ],
+   "via": [],
+   "goal": [
+    -648.59,
+    432.81
+   ],
+   "note": "example: the tightest found"
+  }
+ ]
+}

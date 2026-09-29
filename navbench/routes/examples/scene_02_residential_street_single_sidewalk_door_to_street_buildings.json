@@ -1,0 +1,33 @@
+{
+ "format": 1,
+ "scene": "scene_02_residential_street_single_sidewalk_door_to_street_buildings",
+ "saved": "2026-09-28T16:46:02",
+ "routes": [
+  {
+   "id": "r001",
+   "start": [
+    -731.99,
+    523.81
+   ],
+   "via": [],
+   "goal": [
+    -686.29,
+    528.81
+   ],
+   "note": "example: along the sidewalks"
+  },
+  {
+   "id": "r002",
+   "start": [
+    -684.09,
+    522.91
+   ],
+   "via": [],
+   "goal": [
+    -708.09,
+    515.11
+   ],
+   "note": "example: the tightest found"
+  }
+ ]
+}

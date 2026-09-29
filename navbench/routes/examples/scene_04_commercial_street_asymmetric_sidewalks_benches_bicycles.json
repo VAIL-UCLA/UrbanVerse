@@ -1,0 +1,46 @@
+{
+ "format": 1,
+ "scene": "scene_04_commercial_street_asymmetric_sidewalks_benches_bicycles",
+ "saved": "2026-09-28T16:46:05",
+ "routes": [
+  {
+   "id": "r001",
+   "start": [
+    -731.79,
+    452.31
+   ],
+   "via": [],
+   "goal": [
+    -686.19,
+    484.91
+   ],
+   "note": "example: along the sidewalks"
+  },
+  {
+   "id": "r002",
+   "start": [
+    -684.29,
+    497.91
+   ],
+   "via": [],
+   "goal": [
+    -732.59,
+    450.01
+   ],
+   "note": "example: across a street"
+  },
+  {
+   "id": "r003",
+   "start": [
+    -729.19,
+    468.71
+   ],
+   "via": [],
+   "goal": [
+    -710.49,
+    500.71
+   ],
+   "note": "example: the tightest found"
+  }
+ ]
+}

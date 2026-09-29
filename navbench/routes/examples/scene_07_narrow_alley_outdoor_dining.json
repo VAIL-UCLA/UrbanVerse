@@ -1,0 +1,33 @@
+{
+ "format": 1,
+ "scene": "scene_07_narrow_alley_outdoor_dining",
+ "saved": "2026-09-28T16:46:12",
+ "routes": [
+  {
+   "id": "r001",
+   "start": [
+    -736.59,
+    464.31
+   ],
+   "via": [],
+   "goal": [
+    -684.79,
+    501.81
+   ],
+   "note": "example: along the sidewalks"
+  },
+  {
+   "id": "r002",
+   "start": [
+    -681.59,
+    513.71
+   ],
+   "via": [],
+   "goal": [
+    -652.19,
+    458.21
+   ],
+   "note": "example: the tightest found"
+  }
+ ]
+}

@@ -1,0 +1,33 @@
+{
+ "format": 1,
+ "scene": "scene_06_bar_street_dual_sidewalks_obstructed_fallen_scooters",
+ "saved": "2026-09-28T16:46:09",
+ "routes": [
+  {
+   "id": "r001",
+   "start": [
+    -739.69,
+    460.71
+   ],
+   "via": [],
+   "goal": [
+    -674.89,
+    474.11
+   ],
+   "note": "example: along the sidewalks"
+  },
+  {
+   "id": "r002",
+   "start": [
+    -714.59,
+    466.41
+   ],
+   "via": [],
+   "goal": [
+    -744.39,
+    447.41
+   ],
+   "note": "example: the tightest found"
+  }
+ ]
+}

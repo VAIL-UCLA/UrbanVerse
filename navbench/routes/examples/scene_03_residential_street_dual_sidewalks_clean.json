@@ -1,0 +1,46 @@
+{
+ "format": 1,
+ "scene": "scene_03_residential_street_dual_sidewalks_clean",
+ "saved": "2026-09-28T16:46:03",
+ "routes": [
+  {
+   "id": "r001",
+   "start": [
+    -654.99,
+    495.61
+   ],
+   "via": [],
+   "goal": [
+    -721.39,
+    497.61
+   ],
+   "note": "example: along the sidewalks"
+  },
+  {
+   "id": "r002",
+   "start": [
+    -650.49,
+    485.41
+   ],
+   "via": [],
+   "goal": [
+    -717.39,
+    501.01
+   ],
+   "note": "example: across a street"
+  },
+  {
+   "id": "r003",
+   "start": [
+    -655.29,
+    483.01
+   ],
+   "via": [],
+   "goal": [
+    -708.89,
+    497.01
+   ],
+   "note": "example: the tightest found"
+  }
+ ]
+}

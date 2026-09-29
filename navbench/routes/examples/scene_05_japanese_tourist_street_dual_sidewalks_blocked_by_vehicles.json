@@ -1,0 +1,46 @@
+{
+ "format": 1,
+ "scene": "scene_05_japanese_tourist_street_dual_sidewalks_blocked_by_vehicles",
+ "saved": "2026-09-28T16:46:07",
+ "routes": [
+  {
+   "id": "r001",
+   "start": [
+    -687.29,
+    496.71
+   ],
+   "via": [],
+   "goal": [
+    -732.89,
+    518.01
+   ],
+   "note": "example: along the sidewalks"
+  },
+  {
+   "id": "r002",
+   "start": [
+    -729.29,
+    461.51
+   ],
+   "via": [],
+   "goal": [
+    -696.39,
+    517.41
+   ],
+   "note": "example: across a street"
+  },
+  {
+   "id": "r003",
+   "start": [
+    -700.49,
+    516.81
+   ],
+   "via": [],
+   "goal": [
+    -715.99,
+    456.81
+   ],
+   "note": "example: the tightest found"
+  }
+ ]
+}

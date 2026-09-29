@@ -1,0 +1,438 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Route annotation</title>
+<style>
+  :root { --bg: #16181c; --panel: #202329; --line: #343842; --text: #e6e8eb; --dim: #9aa1ab;
+          --accent: #4ea1ff; --bad: #ff6b6b; --good: #5ad17a; }
+  * { box-sizing: border-box; }
+  body { margin: 0; height: 100vh; display: flex; background: var(--bg); color: var(--text);
+         font: 13px/1.4 system-ui, sans-serif; overflow: hidden; }
+  #side { width: 320px; flex: none; display: flex; flex-direction: column; background: var(--panel);
+          border-right: 1px solid var(--line); }
+  #side > section { padding: 10px 12px; border-bottom: 1px solid var(--line); }
+  #routes { flex: 1; overflow-y: auto; padding: 0; }
+  #wrap { flex: 1; position: relative; }
+  canvas { display: block; width: 100%; height: 100%; cursor: crosshair; }
+  select, button, textarea { font: inherit; color: var(--text); background: var(--bg); border: 1px solid var(--line);
+                             border-radius: 4px; padding: 4px 6px; }
+  select { width: 100%; }
+  button { cursor: pointer; }
+  button:hover { border-color: var(--accent); }
+  textarea { width: 100%; resize: vertical; min-height: 40px; }
+  .row { display: flex; gap: 6px; align-items: center; margin-top: 6px; flex-wrap: wrap; }
+  .route { padding: 6px 12px; border-bottom: 1px solid var(--line); cursor: pointer; }
+  .route:hover { background: #262a31; }
+  .route.sel { background: #2b3440; }
+  .route .id { font-weight: 600; }
+  .route .err { color: var(--bad); }
+  .swatch { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; }
+  .dim { color: var(--dim); }
+  #status { overflow-wrap: anywhere; }
+  #status.bad { color: var(--bad); }
+  #status.good { color: var(--good); }
+  #hud { position: absolute; left: 8px; bottom: 8px; background: rgba(0,0,0,.6); padding: 3px 7px;
+         border-radius: 4px; pointer-events: none; font-variant-numeric: tabular-nums; }
+  #hud:empty { display: none; }
+  #hint { position: absolute; left: 50%; top: 8px; transform: translateX(-50%); background: rgba(0,0,0,.7);
+          padding: 4px 10px; border-radius: 4px; pointer-events: none; }
+  kbd { border: 1px solid var(--line); border-radius: 3px; padding: 0 4px; font-size: 11px; }
+  #facts td { padding: 0 8px 0 0; }
+</style>
+</head>
+<body>
+<div id="side">
+  <section>
+    <select id="scene"></select>
+    <div class="row">
+      <label><input type="checkbox" id="overlay" checked> blocked area</label>
+      <label><input type="checkbox" id="roofs"> roofs</label>
+      <button id="fit" title="F">fit</button>
+      <button id="undo" title="Ctrl+Z">undo</button>
+    </div>
+    <div class="row dim" id="status">loading…</div>
+  </section>
+  <section id="detail" hidden>
+    <div><b id="d-id"></b> <span class="dim" id="d-err"></span></div>
+    <table id="facts"></table>
+    <textarea id="note" placeholder="note (optional)"></textarea>
+    <div class="row"><button id="delete" title="Delete">delete route</button>
+      <button id="clearvia">remove via points</button></div>
+  </section>
+  <div id="routes"></div>
+  <section class="dim">
+    click: start, then goal &nbsp;·&nbsp; <kbd>Shift</kbd>+click: via point<br>
+    drag a point to move it &nbsp;·&nbsp; right-click a via point: remove it<br>
+    <kbd>Del</kbd> delete route &nbsp;·&nbsp; <kbd>Esc</kbd> cancel &nbsp;·&nbsp; <kbd>Ctrl</kbd>+<kbd>Z</kbd> undo<br>
+    wheel: zoom &nbsp;·&nbsp; drag: pan &nbsp;·&nbsp; <kbd>F</kbd> fit
+  </section>
+</div>
+<div id="wrap">
+  <canvas id="map"></canvas>
+  <div id="hud"></div>
+  <div id="hint" hidden></div>
+</div>
+<script>
+"use strict";
+const COLORS = ["#e6194b", "#3cb44b", "#0082c8", "#f58230", "#911eb4", "#46f0f0", "#f032e6", "#d2f53c",
+                "#008080", "#aa6e28", "#800000", "#000080"];
+const $ = (id) => document.getElementById(id);
+const canvas = $("map"), ctx = canvas.getContext("2d");
+
+const app = {
+  scene: null,        // what /api/scene gave: name, grid, robot, routes
+  routes: [],         // [{id, start, via, goal, note, plan: {path, facts} | {error} | null}]
+  selected: null,     // id of the selected route
+  pending: null,      // the start of a route whose goal is still to be clicked
+  image: null, roofs: null, overlay: null,
+  view: { scale: 1, x: 0, y: 0 },
+  history: [],        // earlier states of the routes, for undo
+  saving: false, dirty: false, lastSaved: null,
+};
+window.app = app;
+
+// ── coordinates: world meters <-> map pixels <-> screen pixels ──────────────────────────────
+function toPixel([x, y]) { const g = app.scene.grid; return [(x - g.x_min) / g.res, (g.y_max - y) / g.res]; }
+function toWorld([c, r]) { const g = app.scene.grid; return [g.x_min + c * g.res, g.y_max - r * g.res]; }
+function toScreen(p) { const [c, r] = toPixel(p), v = app.view; return [c * v.scale + v.x, r * v.scale + v.y]; }
+function fromScreen([sx, sy]) { const v = app.view; return toWorld([(sx - v.x) / v.scale, (sy - v.y) / v.scale]); }
+function round3(p) { return [Math.round(p[0] * 1000) / 1000, Math.round(p[1] * 1000) / 1000]; }
+
+// ── server ──────────────────────────────────────────────────────────────────────────────────
+async function api(path, body) {
+  const r = await fetch(path, body === undefined ? {} :
+    { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+  const data = await r.json();
+  if (!r.ok) throw new Error(data.error || r.statusText);
+  return data;
+}
+
+function loadImage(src) {
+  return new Promise((ok, fail) => { const im = new Image(); im.onload = () => ok(im); im.onerror = fail; im.src = src; });
+}
+
+async function openScene(name) {
+  setStatus("loading " + name + "…");
+  app.scene = await api("/api/scene?name=" + encodeURIComponent(name));
+  app.routes = app.scene.routes.map((r) => ({ ...r, via: r.via || [], plan: null }));
+  app.selected = null; app.pending = null; app.history = [];
+  const q = encodeURIComponent(name);
+  [app.image, app.overlay] = await Promise.all([loadImage(`/map/${q}/cut.png`), loadImage(`/overlay/${q}.png`)]);
+  app.roofs = null;
+  try { localStorage.setItem("navbench.scene", name); } catch (e) { /* private window: not remembered */ }
+  fit(); list(); showDetail(); draw();
+  setStatus(`${app.routes.length} routes · saved in ${app.scene.file}`);
+  await Promise.all(app.routes.map(plan));
+}
+
+async function plan(r) {
+  const seq = (r.seq = (r.seq || 0) + 1);
+  const points = [r.start, ...r.via, r.goal];
+  let result;
+  try { result = await api("/api/plan", { name: app.scene.name, points }); }
+  catch (e) { result = { error: String(e.message || e) }; }
+  if (seq !== r.seq) return;  // a newer plan of this route is on its way
+  r.plan = result;
+  list(); showDetail(); draw();
+}
+
+// Every change is saved at once. A change made while a save is on its way is saved right after it.
+async function save() {
+  if (app.saving) { app.dirty = true; return; }
+  app.saving = true; app.dirty = false;
+  setStatus("saving…");
+  try {
+    const routes = app.routes.map(({ id, start, via, goal, note }) => ({ id, start, via, goal, note: note || "" }));
+    const r = await api("/api/save", { name: app.scene.name, routes });
+    app.lastSaved = new Date();
+    setStatus(`saved ${r.routes} routes at ${app.lastSaved.toLocaleTimeString()}`, "good");
+  } catch (e) {
+    setStatus("NOT SAVED: " + (e.message || e), "bad");
+  }
+  app.saving = false;
+  if (app.dirty) save();
+}
+
+function setStatus(text, kind) { const s = $("status"); s.textContent = text; s.className = "row " + (kind || "dim"); }
+
+// ── changes (each one undoable, saved, and re-planned) ───────────────────────────────────────
+function remember() {
+  app.history.push(JSON.stringify(app.routes.map(({ plan, seq, ...r }) => r)));
+  if (app.history.length > 200) app.history.shift();
+}
+
+function changed(r) { save(); list(); showDetail(); draw(); if (r) plan(r); }
+
+function nextId() {
+  const n = app.routes.map((r) => /^r\d+$/.test(r.id) ? parseInt(r.id.slice(1), 10) : 0);
+  return "r" + String(Math.max(0, ...n) + 1).padStart(3, "0");
+}
+
+function addPoint(p) {
+  if (!app.pending) { app.pending = p; hint("now click the goal (Esc cancels)"); draw(); return; }
+  remember();
+  const r = { id: nextId(), start: app.pending, via: [], goal: p, note: "", plan: null };
+  app.routes.push(r); app.pending = null; app.selected = r.id; hint();
+  changed(r);
+}
+
+function addVia(r, p) {
+  // Between the two consecutive points where it lengthens the route least.
+  const pts = [r.start, ...r.via, r.goal], d = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1]);
+  let best = 0, cost = Infinity;
+  for (let i = 0; i + 1 < pts.length; i++) {
+    const c = d(pts[i], p) + d(p, pts[i + 1]) - d(pts[i], pts[i + 1]);
+    if (c < cost) { cost = c; best = i; }
+  }
+  remember(); r.via.splice(best, 0, p); changed(r);
+}
+
+function removeRoute(id) {
+  const i = app.routes.findIndex((r) => r.id === id);
+  if (i < 0) return;
+  remember(); app.routes.splice(i, 1); app.selected = null; changed();
+}
+
+function undo() {
+  if (app.pending) { app.pending = null; hint(); draw(); return; }
+  if (!app.history.length) return;
+  const old = JSON.parse(app.history.pop());
+  const plans = Object.fromEntries(app.routes.map((r) => [r.id, r]));
+  app.routes = old.map((r) => ({ ...r, plan: null }));
+  if (!app.routes.some((r) => r.id === app.selected)) app.selected = null;
+  save(); list(); showDetail(); draw();
+  for (const r of app.routes) {
+    const was = plans[r.id];
+    if (was && JSON.stringify([was.start, was.via, was.goal]) === JSON.stringify([r.start, r.via, r.goal])) r.plan = was.plan;
+    else plan(r);
+  }
+  draw();
+}
+
+// ── drawing ─────────────────────────────────────────────────────────────────────────────────
+function draw() {
+  const dpr = window.devicePixelRatio || 1, w = canvas.clientWidth, h = canvas.clientHeight;
+  if (canvas.width !== w * dpr || canvas.height !== h * dpr) { canvas.width = w * dpr; canvas.height = h * dpr; }
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.fillStyle = "#101114"; ctx.fillRect(0, 0, w, h);
+  if (!app.scene || !app.image) return;
+  const v = app.view, im = $("roofs").checked && app.roofs ? app.roofs : app.image;
+  ctx.save();
+  ctx.setTransform(dpr * v.scale, 0, 0, dpr * v.scale, dpr * v.x, dpr * v.y);
+  ctx.imageSmoothingEnabled = v.scale < 1;
+  ctx.drawImage(im, 0, 0);
+  if ($("overlay").checked && app.overlay) {
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(app.overlay, 0, 0, app.image.width, app.image.height);
+  }
+  ctx.restore();
+  app.routes.forEach((r, i) => { if (r.id !== app.selected) drawRoute(r, COLORS[i % COLORS.length], false); });
+  const sel = app.routes.find((r) => r.id === app.selected);
+  if (sel) drawRoute(sel, COLORS[app.routes.indexOf(sel) % COLORS.length], true);
+  if (app.pending) dot(toScreen(app.pending), "#28c83c", 7);
+}
+
+function drawRoute(r, color, selected) {
+  const pts = [r.start, ...r.via, r.goal];
+  ctx.lineJoin = ctx.lineCap = "round";
+  if (r.plan && r.plan.path) {
+    ctx.beginPath();
+    r.plan.path.forEach((p, i) => { const [x, y] = toScreen(p); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); });
+    ctx.strokeStyle = "rgba(0,0,0,.6)"; ctx.lineWidth = selected ? 7 : 5; ctx.stroke();
+    ctx.strokeStyle = color; ctx.lineWidth = selected ? 4 : 2.5; ctx.stroke();
+  } else {  // not planned (yet): a dashed line through the clicked points
+    ctx.beginPath();
+    pts.forEach((p, i) => { const [x, y] = toScreen(p); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); });
+    ctx.setLineDash([6, 5]); ctx.strokeStyle = r.plan && r.plan.error ? "#ff6b6b" : color; ctx.lineWidth = 2;
+    ctx.stroke(); ctx.setLineDash([]);
+  }
+  const size = selected ? 7 : 5;
+  r.via.forEach((p) => dot(toScreen(p), "#fac800", size - 1));
+  dot(toScreen(r.start), "#28c83c", size);
+  dot(toScreen(r.goal), "#dc1e1e", size);
+  const [x, y] = toScreen(r.start);
+  ctx.font = (selected ? "bold " : "") + "12px system-ui"; ctx.lineWidth = 3; ctx.strokeStyle = "#000";
+  ctx.strokeText(r.id, x + 9, y - 7); ctx.fillStyle = "#fff"; ctx.fillText(r.id, x + 9, y - 7);
+}
+
+function dot([x, y], color, r) {
+  ctx.beginPath(); ctx.arc(x, y, r, 0, 2 * Math.PI);
+  ctx.fillStyle = color; ctx.fill(); ctx.lineWidth = 1.5; ctx.strokeStyle = "#000"; ctx.stroke();
+}
+
+function hint(text) { const h = $("hint"); h.hidden = !text; h.textContent = text || ""; }
+
+// ── side panel ──────────────────────────────────────────────────────────────────────────────
+function list() {
+  const box = $("routes");
+  box.innerHTML = "";
+  app.routes.forEach((r, i) => {
+    const div = document.createElement("div");
+    div.className = "route" + (r.id === app.selected ? " sel" : "");
+    div.dataset.id = r.id;
+    const f = r.plan && r.plan.facts;
+    const what = !r.plan ? '<span class="dim">planning…</span>'
+      : r.plan.error ? `<span class="err">${escapeHtml(r.plan.error)}</span>`
+      : `${f.length_m} m · ${f.road_crossings} crossing${f.road_crossings === 1 ? "" : "s"} · ${f.curbs} curb${f.curbs === 1 ? "" : "s"}`;
+    div.innerHTML = `<span class="swatch" style="background:${COLORS[i % COLORS.length]}"></span>` +
+      `<span class="id">${r.id}</span> ${what}` + (r.note ? `<div class="dim">${escapeHtml(r.note)}</div>` : "");
+    div.onclick = () => { app.selected = r.id; centerOn(r); list(); showDetail(); draw(); };
+    box.appendChild(div);
+  });
+}
+
+function showDetail() {
+  const r = app.routes.find((q) => q.id === app.selected);
+  $("detail").hidden = !r;
+  if (!r) return;
+  $("d-id").textContent = r.id;
+  $("d-err").textContent = r.plan && r.plan.error ? r.plan.error : "";
+  if (document.activeElement !== $("note")) $("note").value = r.note || "";
+  const f = r.plan && r.plan.facts, rows = [];
+  if (f) {
+    rows.push(["length", `${f.length_m} m (straight ${f.straight_m} m, ×${f.detour})`],
+      ["on", Object.entries(f.by_kind_m).map(([k, m]) => `${k} ${m} m`).join(", ")],
+      ["road crossings", f.road_crossings], ["curbs", f.curbs],
+      ["closest obstacle", `${f.min_clearance_m} m`], ["turns", f.turns], ["climb", `${f.climb_m} m`]);
+  }
+  rows.push(["start", r.start.map((v) => v.toFixed(2)).join(", ")], ["goal", r.goal.map((v) => v.toFixed(2)).join(", ")]);
+  if (r.via.length) rows.push(["via points", r.via.length]);
+  $("facts").innerHTML = rows.map(([k, v]) => `<tr><td class="dim">${k}</td><td>${escapeHtml(String(v))}</td></tr>`).join("");
+}
+
+function escapeHtml(s) { return s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]); }
+
+// ── view ────────────────────────────────────────────────────────────────────────────────────
+function fit() {
+  if (!app.image) return;
+  const w = canvas.clientWidth, h = canvas.clientHeight;
+  const s = Math.min(w / app.image.width, h / app.image.height) * 0.95;
+  app.view = { scale: s, x: (w - app.image.width * s) / 2, y: (h - app.image.height * s) / 2 };
+  draw();
+}
+
+function centerOn(r) {
+  const pts = [r.start, ...r.via, r.goal].map(toPixel);
+  const xs = pts.map((p) => p[0]), ys = pts.map((p) => p[1]);
+  const cx = (Math.min(...xs) + Math.max(...xs)) / 2, cy = (Math.min(...ys) + Math.max(...ys)) / 2;
+  const v = app.view, w = canvas.clientWidth, h = canvas.clientHeight;
+  const span = Math.max(Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys), 200);
+  v.scale = Math.min(Math.max(v.scale, 0.1), Math.min(w, h) / span * 0.8);
+  v.x = w / 2 - cx * v.scale; v.y = h / 2 - cy * v.scale;
+}
+
+// ── mouse and keys ──────────────────────────────────────────────────────────────────────────
+function hit(sx, sy) {
+  // The point under the mouse: of the selected route first, then of the others.
+  const order = [...app.routes].sort((a, b) => (b.id === app.selected) - (a.id === app.selected));
+  for (const r of order) {
+    const pts = [["start", r.start], ...r.via.map((p, i) => [i, p]), ["goal", r.goal]];
+    for (const [which, p] of pts) {
+      const [x, y] = toScreen(p);
+      if (Math.hypot(x - sx, y - sy) <= 9) return { route: r, which };
+    }
+  }
+  return null;
+}
+
+let press = null;  // {x, y, hit, moved, view}
+
+canvas.addEventListener("mousedown", (e) => {
+  if (e.button !== 0 || !app.scene) return;
+  press = { x: e.offsetX, y: e.offsetY, hit: hit(e.offsetX, e.offsetY), moved: false, view: { ...app.view } };
+  if (press.hit) { app.selected = press.hit.route.id; list(); showDetail(); draw(); }
+});
+
+canvas.addEventListener("mousemove", (e) => {
+  if (app.scene) {
+    const [x, y] = fromScreen([e.offsetX, e.offsetY]);
+    $("hud").textContent = `x ${x.toFixed(2)}  y ${y.toFixed(2)}`;
+  }
+  if (!press) return;
+  if (Math.hypot(e.offsetX - press.x, e.offsetY - press.y) > 3) press.moved = true;
+  if (!press.moved) return;
+  if (press.hit) {
+    if (!press.remembered) { remember(); press.remembered = true; }
+    const p = round3(fromScreen([e.offsetX, e.offsetY])), r = press.hit.route;
+    if (press.hit.which === "start") r.start = p; else if (press.hit.which === "goal") r.goal = p; else r.via[press.hit.which] = p;
+    r.plan = null;
+    draw();
+  } else {
+    app.view.x = press.view.x + e.offsetX - press.x; app.view.y = press.view.y + e.offsetY - press.y;
+    draw();
+  }
+});
+
+window.addEventListener("mouseup", (e) => {
+  if (!press) return;
+  const p = press; press = null;
+  if (p.hit && p.moved) { changed(p.hit.route); return; }
+  if (p.moved || p.hit) return;
+  const at = round3(fromScreen([p.x, p.y]));
+  const sel = app.routes.find((r) => r.id === app.selected);
+  if (e.shiftKey && sel && !app.pending) addVia(sel, at); else addPoint(at);
+});
+
+canvas.addEventListener("contextmenu", (e) => {
+  e.preventDefault();
+  const h = hit(e.offsetX, e.offsetY);
+  if (h && typeof h.which === "number") { remember(); h.route.via.splice(h.which, 1); app.selected = h.route.id; changed(h.route); }
+});
+
+canvas.addEventListener("wheel", (e) => {
+  e.preventDefault();
+  const v = app.view, k = Math.exp(-e.deltaY * 0.0015), s = Math.min(Math.max(v.scale * k, 0.02), 16);
+  v.x = e.offsetX - (e.offsetX - v.x) * s / v.scale; v.y = e.offsetY - (e.offsetY - v.y) * s / v.scale; v.scale = s;
+  draw();
+}, { passive: false });
+
+window.addEventListener("keydown", (e) => {
+  if (e.target.tagName === "TEXTAREA" || e.target.tagName === "SELECT") return;
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z") { e.preventDefault(); undo(); }
+  else if (e.key === "Delete" || e.key === "Backspace") { if (app.selected) removeRoute(app.selected); }
+  else if (e.key === "Escape") { app.pending = null; app.selected = null; hint(); list(); showDetail(); draw(); }
+  else if (e.key === "f" || e.key === "F") fit();
+});
+
+$("note").addEventListener("input", () => {
+  const r = app.routes.find((q) => q.id === app.selected);
+  if (!r) return;
+  clearTimeout(app.noteTimer);
+  if (!app.noteEditing) { remember(); app.noteEditing = true; }
+  r.note = $("note").value;
+  app.noteTimer = setTimeout(() => { app.noteEditing = false; save(); list(); }, 400);
+});
+$("delete").onclick = () => app.selected && removeRoute(app.selected);
+$("clearvia").onclick = () => { const r = app.routes.find((q) => q.id === app.selected); if (r && r.via.length) { remember(); r.via = []; changed(r); } };
+$("undo").onclick = undo;
+$("fit").onclick = fit;
+$("overlay").onchange = draw;
+$("roofs").onchange = async () => {
+  if ($("roofs").checked && !app.roofs) app.roofs = await loadImage(`/map/${encodeURIComponent(app.scene.name)}/topdown.png`);
+  draw();
+};
+$("scene").onchange = () => openScene($("scene").value);
+window.addEventListener("resize", draw);
+window.addEventListener("beforeunload", (e) => { if (app.saving || app.dirty) e.preventDefault(); });
+
+// ── start ───────────────────────────────────────────────────────────────────────────────────
+(async () => {
+  const scenes = await api("/api/scenes");
+  $("scene").innerHTML = scenes.map((s) => `<option value="${s.name}">${s.name.replace(/_/g, " ")} (${s.routes})</option>`).join("");
+  const params = new URLSearchParams(location.search);
+  let last = null;
+  try { last = localStorage.getItem("navbench.scene"); } catch (e) { /* private window */ }
+  const want = params.get("scene");
+  const pick = scenes.find((s) => want && (s.name === want || s.name.startsWith(want + "_")))
+    || scenes.find((s) => s.name === last) || scenes[0];
+  $("scene").value = pick.name;
+  await openScene(pick.name);
+  if (params.has("selftest")) {
+    const s = document.createElement("script"); s.src = "/selftest.js"; document.body.appendChild(s);
+  }
+})().catch((e) => setStatus("error: " + (e.message || e), "bad"));
+</script>
+</body>
+</html>

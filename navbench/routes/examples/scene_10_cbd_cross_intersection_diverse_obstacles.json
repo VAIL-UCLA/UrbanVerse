@@ -1,0 +1,46 @@
+{
+ "format": 1,
+ "scene": "scene_10_cbd_cross_intersection_diverse_obstacles",
+ "saved": "2026-09-28T16:46:28",
+ "routes": [
+  {
+   "id": "r001",
+   "start": [
+    -580.09,
+    510.11
+   ],
+   "via": [],
+   "goal": [
+    -550.19,
+    553.11
+   ],
+   "note": "example: along the sidewalks"
+  },
+  {
+   "id": "r002",
+   "start": [
+    -610.19,
+    442.81
+   ],
+   "via": [],
+   "goal": [
+    -657.89,
+    478.51
+   ],
+   "note": "example: across a street"
+  },
+  {
+   "id": "r003",
+   "start": [
+    -683.69,
+    415.31
+   ],
+   "via": [],
+   "goal": [
+    -627.99,
+    429.81
+   ],
+   "note": "example: the tightest found"
+  }
+ ]
+}

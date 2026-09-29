@@ -1,0 +1,33 @@
+{
+ "format": 1,
+ "scene": "scene_11_urban_park_dogs_sports_area",
+ "saved": "2026-09-28T16:46:30",
+ "routes": [
+  {
+   "id": "r001",
+   "start": [
+    -690.09,
+    474.72
+   ],
+   "via": [],
+   "goal": [
+    -723.59,
+    531.02
+   ],
+   "note": "example: along the sidewalks"
+  },
+  {
+   "id": "r002",
+   "start": [
+    -653.89,
+    490.02
+   ],
+   "via": [],
+   "goal": [
+    -708.69,
+    510.12
+   ],
+   "note": "example: the tightest found"
+  }
+ ]
+}
